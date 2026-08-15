@@ -1,219 +1,349 @@
 @extends('layouts.app')
 
-@section('title', $apartment->title . ' - ApartStay')
+@section('title', $apartment->title . ' — Santhosa')
+@section('meta_description', \Illuminate\Support\Str::limit(strip_tags($apartment->description), 150))
+
+@php
+    $gallery = $apartment->gallery_urls;
+    $extraPhotos = max(0, count($gallery) - 2);
+@endphp
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Breadcrumb -->
-    <nav class="flex items-center gap-2 text-xs text-slate-400 mb-6">
-        <a href="{{ route('home') }}" class="hover:text-white">Beranda</a>
-        <span>/</span>
-        <a href="{{ route('apartments.index') }}" class="hover:text-white">Apartemen</a>
-        <span>/</span>
-        <span class="text-slate-200 font-semibold truncate">{{ $apartment->title }}</span>
-    </nav>
+    <section class="border-b border-white/10 bg-ink-900">
+        <div class="site-container py-12 sm:py-14">
+            <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
+                <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
+                <span aria-hidden="true">›</span>
+                <a href="{{ route('apartments.index') }}" class="transition-colors hover:text-gold-300">Katalog Unit</a>
+                <span aria-hidden="true">›</span>
+                <span class="truncate text-ink-200" aria-current="page">{{ $apartment->title }}</span>
+            </nav>
 
-    <!-- Title Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-        <div>
-            <span class="px-2.5 py-1 text-xs font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-md inline-block mb-2">
-                {{ $apartment->city }}
-            </span>
-            <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">{{ $apartment->title }}</h1>
-            <p class="text-sm text-slate-400 flex items-center gap-1 mt-1">
-                <svg class="w-4 h-4 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p class="section-eyebrow mt-6">{{ $apartment->city }}</p>
+            <h1 class="mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl">
+                {{ $apartment->title }}
+            </h1>
+            <p class="mt-4 flex items-start gap-2 text-sm leading-6 text-ink-300">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z" />
+                    <circle cx="12" cy="10" r="3" stroke-width="1.8" />
+                </svg>
                 {{ $apartment->address }}
             </p>
         </div>
+    </section>
 
-        <div class="bg-slate-800/90 border border-slate-700 px-5 py-3 rounded-2xl flex items-center gap-3">
-            <span class="text-xs text-slate-400">Harga Per Malam</span>
-            <span class="text-2xl font-extrabold text-brand-400">Rp {{ number_format($apartment->price_per_night, 0, ',', '.') }}</span>
-        </div>
-    </div>
+    <section class="bg-ink-950 pt-8 sm:pt-10">
+        <div class="site-container grid gap-2 md:grid-cols-3">
+            <div class="relative h-[300px] overflow-hidden bg-ink-800 sm:h-[420px] md:col-span-2">
+                <img src="{{ $apartment->main_image_url }}" alt="{{ $apartment->title }}" class="h-full w-full object-cover" fetchpriority="high" decoding="async">
+            </div>
 
-    <!-- Gallery Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 rounded-2xl overflow-hidden">
-        <div class="md:col-span-2 h-[340px] sm:h-[440px] relative">
-            <img src="{{ $apartment->main_image }}" alt="{{ $apartment->title }}" class="w-full h-full object-cover">
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-1 gap-4 h-[340px] sm:h-[440px]">
-            @if(!empty($apartment->images) && is_array($apartment->images))
-                @foreach(array_slice($apartment->images, 0, 2) as $img)
-                    <div class="h-full relative overflow-hidden rounded-xl">
-                        <img src="{{ $img }}" alt="Gallery" class="w-full h-full object-cover">
+            <div class="grid h-[180px] grid-cols-2 gap-2 sm:h-[420px] md:grid-cols-1">
+                @forelse(array_slice($gallery, 0, 2) as $index => $img)
+                    <div class="relative overflow-hidden bg-ink-800">
+                        <img src="{{ $img }}" alt="Foto {{ $apartment->title }} nomor {{ $index + 2 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+                        @if($loop->last && $extraPhotos > 0)
+                            <span class="absolute inset-x-0 bottom-0 bg-ink-950/85 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-ivory-100">
+                                +{{ $extraPhotos }} foto lainnya
+                            </span>
+                        @endif
                     </div>
-                @endforeach
-            @else
-                <div class="h-full relative overflow-hidden rounded-xl bg-slate-800">
-                    <img src="{{ $apartment->main_image }}" alt="Gallery" class="w-full h-full object-cover opacity-60">
-                </div>
-            @endif
+                @empty
+                    <div class="relative col-span-2 overflow-hidden bg-ink-800 md:col-span-1">
+                        <img src="{{ $apartment->main_image_url }}" alt="" class="h-full w-full object-cover opacity-40" loading="lazy" decoding="async">
+                    </div>
+                @endforelse
+            </div>
         </div>
-    </div>
-
-    <!-- Content Layout: Left Details, Right Booking Form -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        
-        <!-- Left Column -->
-        <div class="lg:col-span-2 space-y-10">
-            <!-- Specifications -->
-            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+    </section>
+    <section class="bg-ink-950 py-12 sm:py-16">
+        <div class="site-container grid gap-12 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-14">
+            <div class="min-w-0 space-y-14">
                 <div>
-                    <span class="text-xs text-slate-400 block mb-1">Kamar Tidur</span>
-                    <span class="text-lg font-bold text-white flex items-center justify-center gap-1">
-                        <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        {{ $apartment->bedrooms }} Room
-                    </span>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-400 block mb-1">Kamar Mandi</span>
-                    <span class="text-lg font-bold text-white flex items-center justify-center gap-1">
-                        <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
-                        {{ $apartment->bathrooms }} Bath
-                    </span>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-400 block mb-1">Luas Unit</span>
-                    <span class="text-lg font-bold text-white flex items-center justify-center gap-1">
-                        <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-2V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                        {{ $apartment->area_sqm }} m²
-                    </span>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-400 block mb-1">Kapasitas Maks</span>
-                    <span class="text-lg font-bold text-white flex items-center justify-center gap-1">
-                        <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                        {{ $apartment->capacity }} Guests
-                    </span>
-                </div>
-            </div>
-
-            <!-- Description -->
-            <div>
-                <h3 class="text-xl font-bold text-white mb-3">Deskripsi Apartemen</h3>
-                <div class="prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm">
-                    {!! nl2br(e($apartment->description)) !!}
-                </div>
-            </div>
-
-            <!-- Facilities -->
-            <div>
-                <h3 class="text-xl font-bold text-white mb-4">Fasilitas Unit</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    @foreach($apartment->facilities as $fac)
-                        <div class="flex items-center gap-3 bg-slate-800/60 border border-slate-700/60 p-3.5 rounded-xl">
-                            <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <h2 class="section-eyebrow">Spesifikasi unit</h2>
+                    <div class="mt-5 grid grid-cols-2 border-l border-t border-white/10 sm:grid-cols-4">
+                        @foreach([
+                            ['label' => 'Kamar tidur', 'value' => $apartment->bedrooms . ' kamar', 'icon' => 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],
+                            ['label' => 'Kamar mandi', 'value' => $apartment->bathrooms . ' kamar', 'icon' => 'M4 12h16v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5Zm3-9a3 3 0 0 0-3 3v6'],
+                            ['label' => 'Luas unit', 'value' => $apartment->area_sqm . ' m²', 'icon' => 'M4 8V4h4M20 8V4h-4M4 16v4h4m12-4v4h-4'],
+                            ['label' => 'Kapasitas', 'value' => $apartment->capacity . ' orang', 'icon' => 'M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 4a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm7.5 3.5a3 3 0 0 1 0 6M21 20v-2a4 4 0 0 0-3-3.87'],
+                        ] as $spec)
+                            <div class="border-b border-r border-white/10 px-4 py-5 sm:px-5">
+                                <svg class="h-5 w-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="{{ $spec['icon'] }}" />
+                                </svg>
+                                <p class="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">{{ $spec['label'] }}</p>
+                                <p class="mt-1 text-sm font-semibold text-white">{{ $spec['value'] }}</p>
                             </div>
-                            <span class="text-sm font-semibold text-white">{{ $fac->name }}</span>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="section-eyebrow">Tentang unit ini</h2>
+                    <div class="mt-5 max-w-2xl text-sm leading-7 text-ink-200">
+                        {!! nl2br(e($apartment->description)) !!}
+                    </div>
+                </div>
+
+                @if($apartment->facilities->isNotEmpty())
+                    <div>
+                        <h2 class="section-eyebrow">Fasilitas unit</h2>
+                        <div class="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach($apartment->facilities as $fac)
+                                <div class="flex items-center gap-3 border-b border-white/8 pb-4">
+                                    <span class="shrink-0 text-gold-400">
+                                        <x-facility-icon :name="$fac->icon" class="h-5 w-5" />
+                                    </span>
+                                    <span class="min-w-0 text-sm text-ivory-100">{{ $fac->name }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    </div>
+                @endif
+            </div>
+            <div class="lg:sticky lg:top-24">
+                <div class="border border-white/10 bg-ink-900 p-6">
+                    <p class="section-eyebrow before:hidden">Mulai dari</p>
+                    <p class="mt-2 text-2xl font-semibold tracking-[-0.02em] text-ivory-100">
+                        IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
+                        <span class="text-xs font-normal text-ink-400">/ malam</span>
+                    </p>
+
+                    <form action="{{ route('bookings.store') }}" method="POST" id="bookingForm" class="mt-7 space-y-4" data-submit-loading>
+                        @csrf
+                        <input type="hidden" name="apartment_id" value="{{ $apartment->id }}">
+
+                        <div>
+                            <label class="search-field @error('check_in') border-rose-400/70 @enderror">
+                                <span class="search-field__label">Tanggal check-in</span>
+                                <input type="date" name="check_in" id="check_in" value="{{ old('check_in') }}" min="{{ date('Y-m-d') }}" required
+                                    @error('check_in') aria-invalid="true" aria-describedby="check_in_error" @enderror
+                                    class="search-field__control">
+                            </label>
+                            @error('check_in')
+                                <p id="check_in_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="search-field @error('check_out') border-rose-400/70 @enderror">
+                                <span class="search-field__label">Tanggal check-out</span>
+                                <input type="date" name="check_out" id="check_out" value="{{ old('check_out') }}" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required
+                                    @error('check_out') aria-invalid="true" aria-describedby="check_out_error" @enderror
+                                    class="search-field__control">
+                            </label>
+                            @error('check_out')
+                                <p id="check_out_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <p id="availabilityMessage" class="hidden" role="status" aria-live="polite"></p>
+
+                        @if($bookedDates->isNotEmpty())
+                            <details class="border border-white/6 bg-ink-950/70 px-3 py-2.5">
+                                <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400 transition-colors hover:text-gold-300">
+                                    Tanggal tidak tersedia ({{ $bookedDates->count() }} periode)
+                                </summary>
+                                <ul class="mt-2.5 space-y-1 text-xs leading-5 text-ink-400">
+                                    @foreach($bookedDates as $range)
+                                        <li class="line-through decoration-rose-400/60">
+                                            {{ \Illuminate\Support\Carbon::parse($range['from'])->translatedFormat('d M Y') }}
+                                            &ndash;
+                                            {{ \Illuminate\Support\Carbon::parse($range['to'])->translatedFormat('d M Y') }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
+                        @endif
+
+                        <div>
+                            <label for="notes" class="search-field__label block">Catatan khusus (opsional)</label>
+                            <textarea name="notes" id="notes" rows="2" placeholder="Permintaan khusus / perkiraan waktu kedatangan"
+                                class="mt-2 w-full border border-white/6 bg-ink-950/70 px-3 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-gold-400/65">{{ old('notes') }}</textarea>
+                            @error('notes')
+                                <p class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div id="priceCalculationCard" class="hidden space-y-2 border-t border-white/10 pt-4">
+                            <div class="flex justify-between gap-4 text-xs text-ink-300">
+                                <span>Tarif per malam</span>
+                                <span>IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between gap-4 text-xs text-ink-300">
+                                <span>Durasi menginap</span>
+                                <span id="calcNights">0 malam</span>
+                            </div>
+                            <div class="flex justify-between gap-4 text-xs text-ink-300">
+                                <span>Subtotal</span>
+                                <span id="calcSubtotal">IDR 0</span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-4 border-t border-white/10 pt-3">
+                                <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Total</span>
+                                <span id="calcTotalPrice" class="text-base font-semibold text-gold-400">IDR 0</span>
+                            </div>
+                        </div>
+
+                        @error('payment')
+                            <p class="border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs leading-5 text-rose-200" role="alert">{{ $message }}</p>
+                        @enderror
+
+                        @auth
+                            <button type="submit" id="submitBtn" class="gold-button w-full" data-loading-label="Memproses...">
+                                <span>Booking Sekarang</span>
+                            </button>
+                            <p class="text-center text-[10px] font-bold uppercase tracking-[0.12em] text-ink-400">
+                                Belum ada penagihan pada langkah ini
+                            </p>
+                        @else
+                            <a href="{{ route('login') }}" class="flex min-h-11 w-full items-center justify-center border border-white/15 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-gold-400/50 hover:text-gold-300">
+                                Masuk untuk booking
+                            </a>
+                            <p class="text-center text-[10px] leading-5 text-ink-400">
+                                Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-gold-400 transition-colors hover:text-gold-200">Daftar dulu</a>
+                            </p>
+                        @endauth
+                    </form>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Right Column: Interactive Booking Widget -->
-        <div class="lg:col-span-1">
-            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 sticky top-28 shadow-2xl">
-                <h3 class="text-xl font-bold text-white mb-1">Form Pemesanan</h3>
-                <p class="text-xs text-slate-400 mb-6">Pilih tanggal check-in & check-out untuk reservasi.</p>
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const form = document.getElementById('bookingForm');
+                const checkInInput = document.getElementById('check_in');
+                const checkOutInput = document.getElementById('check_out');
+                const calcCard = document.getElementById('priceCalculationCard');
+                const calcNights = document.getElementById('calcNights');
+                const calcSubtotal = document.getElementById('calcSubtotal');
+                const calcTotalPrice = document.getElementById('calcTotalPrice');
+                const message = document.getElementById('availabilityMessage');
+                const submitBtn = document.getElementById('submitBtn');
+                const pricePerNight = {{ $apartment->price_per_night }};
+                // Rentang terpesan (pending + confirmed) dari ApartmentController::show.
+                const bookedRanges = @json($bookedDates);
+                const availabilityUrl = @json(route('apartments.availability', $apartment->id));
 
-                <form action="{{ route('bookings.store') }}" method="POST" id="bookingForm" class="space-y-4">
-                    @csrf
-                    <input type="hidden" name="apartment_id" value="{{ $apartment->id }}">
+                const idr = (value) => 'IDR ' + value.toLocaleString('id-ID');
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tanggal Check-In</label>
-                        <input type="date" name="check_in" id="check_in" min="{{ date('Y-m-d') }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
-                    </div>
+                // Aturan sama dengan Booking::scopeConflicting: check-out di hari
+                // yang sama dengan check-in tamu lain masih boleh.
+                const overlapsBooked = (checkIn, checkOut) =>
+                    bookedRanges.some((range) => range.from < checkOut && range.to > checkIn);
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tanggal Check-Out</label>
-                        <input type="date" name="check_out" id="check_out" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
-                    </div>
+                const TONES = {
+                    ok: 'border border-emerald-400/40 bg-emerald-500/10 px-3 py-2.5 text-xs leading-5 text-emerald-200',
+                    busy: 'border border-white/10 bg-white/5 px-3 py-2.5 text-xs leading-5 text-ink-300',
+                    error: 'border border-rose-400/40 bg-rose-500/10 px-3 py-2.5 text-xs leading-5 text-rose-200',
+                };
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Catatan Khusus (Opsional)</label>
-                        <textarea name="notes" rows="2" placeholder="Permintaan khusus / waktu kedatangan..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"></textarea>
-                    </div>
+                function setMessage(text, tone) {
+                    message.textContent = text || '';
+                    message.className = text ? TONES[tone] : 'hidden';
+                }
 
-                    <!-- Price Calculation Card -->
-                    <div id="priceCalculationCard" class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 space-y-2 hidden">
-                        <div class="flex justify-between text-xs text-slate-400">
-                            <span>Harga / malam</span>
-                            <span>Rp {{ number_format($apartment->price_per_night, 0, ',', '.') }}</span>
-                        </div>
-                        <div class="flex justify-between text-xs text-slate-400">
-                            <span>Durasi Menginap</span>
-                            <span id="calcNights">0 malam</span>
-                        </div>
-                        <div class="border-t border-slate-700 pt-2 flex justify-between font-bold text-sm text-white">
-                            <span>Total Pembayaran</span>
-                            <span id="calcTotalPrice" class="text-brand-400">Rp 0</span>
-                        </div>
-                    </div>
+                function setSubmitEnabled(enabled) {
+                    if (submitBtn) submitBtn.disabled = !enabled;
+                }
 
-                    @auth
-                        <button type="submit" id="submitBtn" class="w-full py-3.5 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Booking Sekarang
-                        </button>
-                    @else
-                        <a href="{{ route('login') }}" class="w-full py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm rounded-xl text-center block transition-colors">
-                            Masuk Untuk Booking
-                        </a>
-                    @endauth
-                </form>
-            </div>
-        </div>
+                function calculate() {
+                    const checkIn = checkInInput.value;
+                    const checkOut = checkOutInput.value;
 
-    </div>
-</div>
+                    if (!checkIn || !checkOut || checkOut <= checkIn) {
+                        calcCard.classList.add('hidden');
+                        return 0;
+                    }
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkInInput = document.getElementById('check_in');
-        const checkOutInput = document.getElementById('check_out');
-        const calcCard = document.getElementById('priceCalculationCard');
-        const calcNights = document.getElementById('calcNights');
-        const calcTotalPrice = document.getElementById('calcTotalPrice');
-        const pricePerNight = {{ $apartment->price_per_night }};
-
-        function calculate() {
-            if (checkInInput.value && checkOutInput.value) {
-                const date1 = new Date(checkInInput.value);
-                const date2 = new Date(checkOutInput.value);
-                
-                if (date2 > date1) {
-                    const diffTime = Math.abs(date2 - date1);
-                    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    const total = nights * pricePerNight;
+                    const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+                    const subtotal = nights * pricePerNight;
 
                     calcNights.textContent = nights + ' malam';
-                    calcTotalPrice.textContent = 'Rp ' + total.toLocaleString('id-ID');
+                    calcSubtotal.textContent = idr(subtotal);
+                    calcTotalPrice.textContent = idr(subtotal);
                     calcCard.classList.remove('hidden');
-                } else {
-                    calcCard.classList.add('hidden');
-                }
-            }
-        }
 
-        checkInInput.addEventListener('change', function() {
-            if (checkInInput.value) {
-                const nextDay = new Date(checkInInput.value);
-                nextDay.setDate(nextDay.getDate() + 1);
-                checkOutInput.min = nextDay.toISOString().split('T')[0];
-                if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
-                    checkOutInput.value = nextDay.toISOString().split('T')[0];
+                    return nights;
                 }
-            }
-            calculate();
-        });
 
-        checkOutInput.addEventListener('change', calculate);
-    });
-</script>
-@endpush
+                let requestId = 0;
+
+                async function verify() {
+                    const checkIn = checkInInput.value;
+                    const checkOut = checkOutInput.value;
+                    const current = ++requestId;
+
+                    if (!calculate()) {
+                        setMessage('');
+                        setSubmitEnabled(true);
+                        return;
+                    }
+
+                    if (overlapsBooked(checkIn, checkOut)) {
+                        setMessage('Tanggal tersebut sudah dipesan. Silakan pilih tanggal lain.', 'error');
+                        setSubmitEnabled(false);
+                        return;
+                    }
+
+                    setMessage('Memeriksa ketersediaan...', 'busy');
+                    setSubmitEnabled(false);
+
+                    try {
+                        const response = await fetch(availabilityUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value,
+                            },
+                            body: JSON.stringify({ check_in: checkIn, check_out: checkOut }),
+                        });
+
+                        if (current !== requestId) return; // balasan basi, tanggal sudah diganti
+
+                        if (!response.ok) {
+                            throw new Error('availability check failed');
+                        }
+
+                        const data = await response.json();
+                        setMessage(data.message, data.available ? 'ok' : 'error');
+                        setSubmitEnabled(data.available);
+                    } catch (error) {
+                        if (current !== requestId) return;
+                        // Endpoint tak terjangkau — jangan kunci tamu. Server tetap
+                        // memeriksa ulang konflik di dalam transaksi booking.
+                        setMessage('');
+                        setSubmitEnabled(true);
+                    }
+                }
+
+                let debounce;
+                const scheduleVerify = () => {
+                    clearTimeout(debounce);
+                    debounce = setTimeout(verify, 250);
+                };
+
+                checkInInput.addEventListener('change', function () {
+                    if (checkInInput.value) {
+                        const nextDay = new Date(checkInInput.value);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        checkOutInput.min = nextDay.toISOString().split('T')[0];
+                        if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
+                            checkOutInput.value = nextDay.toISOString().split('T')[0];
+                        }
+                    }
+                    scheduleVerify();
+                });
+
+                checkOutInput.addEventListener('change', scheduleVerify);
+
+                // Tanggal bisa sudah terisi dari old() setelah validasi gagal —
+                // hitung ulang sekali supaya rincian total tidak ikut hilang.
+                calculate();
+            });
+        </script>
+    @endpush
 @endsection

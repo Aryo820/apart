@@ -2,52 +2,302 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
+
+/*
+ * Applies only where a real pointer can hover. Used for the card photo's
+ * grayscale-at-rest treatment: on touch there is no hover, so without this
+ * the photos would stay gray forever.
+ */
+@custom-variant hover-device (@media (hover: hover));
 
 @theme {
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
 
-    /* Brand palette (moved from the old inline tailwind.config CDN script). */
-    --color-brand-50: #f0f7ff;
-    --color-brand-100: #e0effe;
-    --color-brand-200: #bae0fd;
-    --color-brand-300: #7dd3fc;
-    --color-brand-400: #38bdf8;
-    --color-brand-500: #0284c7;
-    --color-brand-600: #0369a1;
-    --color-brand-700: #075985;
-    --color-brand-800: #0e7490;
-    --color-brand-900: #0c4a6e;
-    --color-brand-950: #082f49;
+    --color-ink-950: #07101f;
+    --color-ink-900: #101a30;
+    --color-ink-800: #182641;
+    --color-ink-700: #243453;
+    --color-ink-600: #354566;
+    --color-ink-500: #5e6b84;
+    --color-ink-400: #748098;
+    --color-ink-300: #98a2b7;
+    --color-ink-200: #c5cad5;
 
-    --color-accent-500: #e11d48;
-    --color-accent-600: #be123c;
+    --color-gold-50: #fffbed;
+    --color-gold-100: #fff3c6;
+    --color-gold-200: #ffe787;
+    --color-gold-300: #f8d14d;
+    --color-gold-400: #e4b82f;
+    --color-gold-500: #c99a18;
+    --color-gold-600: #a8760e;
+    --color-gold-700: #86580f;
+    --color-gold-800: #704613;
+    --color-gold-900: #603b15;
+
+    --color-ivory-50: #fffdf8;
+    --color-ivory-100: #f6f1e7;
+    --color-ivory-200: #e9e1d3;
+
+    --color-brand-50: #fffbed;
+    --color-brand-100: #fff3c6;
+    --color-brand-200: #ffe787;
+    --color-brand-300: #f8d14d;
+    --color-brand-400: #e4b82f;
+    --color-brand-500: #c99a18;
+    --color-brand-600: #a8760e;
+    --color-brand-700: #86580f;
+    --color-brand-800: #704613;
+    --color-brand-900: #603b15;
+    --color-brand-950: #352008;
+
+    --color-accent-500: #e4b82f;
+    --color-accent-600: #c99a18;
+}
+
+@layer base {
+    :root {
+        color-scheme: dark;
+    }
+
+    html {
+        min-width: 320px;
+        background: var(--color-ink-950);
+    }
+
+    body {
+        overflow-x: hidden;
+        background: var(--color-ink-950);
+    }
+
+    ::selection {
+        background: rgb(228 184 47 / 35%);
+        color: white;
+    }
+
+    button,
+    a,
+    input,
+    select,
+    textarea {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button,
+    [role='button'],
+    a {
+        touch-action: manipulation;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-gold-300);
+        outline-offset: 3px;
+    }
+
+    input,
+    select,
+    textarea {
+        font: inherit;
+    }
+
+    option {
+        background: var(--color-ink-900);
+        color: white;
+    }
 }
 
 @layer components {
-    .glass-card {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .site-container {
+        width: 100%;
+        max-width: 1280px;
+        margin-inline: auto;
+        padding-inline: 1.25rem;
     }
 
-    .glass-dark {
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    .skip-link {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 100;
+        transform: translateY(-160%);
+        background: var(--color-gold-400);
+        color: var(--color-ink-950);
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        transition: transform 180ms ease-out;
     }
 
-    .gradient-text {
-        background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        color: transparent;
+    .skip-link:focus {
+        transform: translateY(0);
     }
 
-    .hero-gradient {
-        background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+    .section-eyebrow {
+        color: var(--color-ink-300);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        line-height: 1.4;
+        text-transform: uppercase;
+    }
+
+    .section-eyebrow::before {
+        display: inline-block;
+        width: 1.5rem;
+        height: 1px;
+        margin-right: 0.65rem;
+        vertical-align: middle;
+        background: var(--color-gold-400);
+        content: '';
+    }
+
+    .gold-button {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        border: 1px solid var(--color-gold-400);
+        border-radius: 999px;
+        background: var(--color-gold-400);
+        padding: 0.75rem 1.35rem;
+        color: var(--color-ink-950);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.075em;
+        line-height: 1;
+        text-transform: uppercase;
+        transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+    }
+
+    .gold-button:hover {
+        border-color: var(--color-gold-300);
+        background: var(--color-gold-300);
+        transform: translateY(-1px);
+    }
+
+    .gold-button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+        transform: none;
+    }
+
+    .inline-link {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        gap: 0.25rem;
+        border-bottom: 1px solid rgb(228 184 47 / 45%);
+        color: var(--color-ivory-100);
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: border-color 180ms ease-out, color 180ms ease-out;
+    }
+
+    .inline-link:hover {
+        border-color: var(--color-gold-300);
+        color: var(--color-gold-300);
+    }
+
+    .search-field {
+        display: flex;
+        min-height: 3.5rem;
+        flex-direction: column;
+        justify-content: center;
+        border: 1px solid rgb(255 255 255 / 6%);
+        background: rgb(7 16 31 / 68%);
+        padding: 0.55rem 0.9rem;
+    }
+
+    .search-field:focus-within {
+        border-color: rgb(228 184 47 / 65%);
+    }
+
+    /*
+     * .search-field__control mematikan outline-nya sendiri supaya ring tidak
+     * menempel ketat di dalam kotak; ring-nya dipindah ke wrapper. :has() dipakai
+     * agar cincin hanya muncul untuk fokus keyboard, bukan setiap klik mouse.
+     */
+    .search-field:has(:focus-visible) {
+        outline: 2px solid var(--color-gold-300);
+        outline-offset: 3px;
+    }
+
+    .search-field__label {
+        color: var(--color-ink-300);
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .search-field__control {
+        width: 100%;
+        min-height: 1.75rem;
+        border: 0;
+        background: transparent;
+        color: white;
+        font-size: 0.78rem;
+        outline: none;
+    }
+
+    .search-field__control::placeholder {
+        color: var(--color-ink-400);
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgb(255 255 255 / 10%);
+        background: rgb(16 26 48 / 50%);
+        padding: 3rem 1.5rem;
+        text-align: center;
+    }
+}
+
+@media (min-width: 640px) {
+    .site-container {
+        padding-inline: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .site-container {
+        padding-inline: 2.5rem;
+    }
+}
+
+/*
+ * Unlayered on purpose: this has to beat the `text-sm`/`text-xs` utilities in
+ * @layer utilities. iOS Safari zooms the viewport on focus for any control
+ * below 16px and never zooms back out, so every input gets a 16px floor on
+ * touch devices. Keyed on `hover: none` rather than a width breakpoint —
+ * the zoom is a pointer trait, not a screen-size one (iPads zoom too).
+ */
+@media (hover: none) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+        font-size: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
     }
 }

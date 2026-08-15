@@ -37,14 +37,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/booking/{code}', [BookingController::class, 'show'])->name('bookings.show');
 });
 
-// Write actions throttled separately so a flood of bookings (which block
-// calendar dates while pending) or payment simulations can't be abused.
-// Named limiter (keyed per user, not per route path) is defined in
-// AppServiceProvider.
-Route::middleware(['auth', 'throttle:bookings'])->group(function () {
-    Route::post('/booking', [BookingController::class, 'store'])->name('bookings.store');
-    Route::post('/booking/{code}/simulate-payment', [PaymentController::class, 'simulatePayment'])->name('payments.simulate');
-});
+// Booking writes are throttled because pending reservations block calendar
+// dates. The named limiter is keyed per user in AppServiceProvider.
+Route::post('/booking', [BookingController::class, 'store'])
+    ->middleware(['auth', 'throttle:bookings'])
+    ->name('bookings.store');
 
 // Midtrans Webhook (Exempt from CSRF in bootstrap/app.php)
 Route::post('/payment/midtrans-notification', [PaymentController::class, 'callback'])->name('payments.callback');

@@ -1,195 +1,266 @@
 @extends('layouts.app')
 
-@php use App\Enums\BookingStatus; @endphp
+@php
+    use App\Enums\BookingStatus;
+    use App\Enums\PaymentStatus;
 
-@section('title', 'Detail Booking #' . $booking->booking_code . ' - ApartStay')
+    // Copy Indonesia untuk status gateway; enum tetap satu sumber kebenaran.
+    $paymentStatusLabel = match ($booking->payment?->status) {
+        PaymentStatus::Settlement => 'Lunas',
+        PaymentStatus::Pending => 'Menunggu pembayaran',
+        PaymentStatus::Expire => 'Kedaluwarsa',
+        PaymentStatus::Cancel => 'Dibatalkan',
+        PaymentStatus::Failed => 'Gagal',
+        default => 'Belum ada pembayaran',
+    };
+@endphp
+
+@section('title', 'Reservasi ' . $booking->booking_code . ' — Santhosa')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <div class="mb-6 flex items-center justify-between">
-        <a href="{{ route('bookings.index') }}" class="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Kembali ke Riwayat Booking
-        </a>
-        <span class="text-xs text-slate-500">Dibuat pada {{ $booking->created_at->format('d M Y, H:i') }}</span>
-    </div>
+    <section class="bg-ink-900 border-white/10 border-b">
+        <div class="py-10 sm:py-12 site-container">
+            <div class="mx-auto max-w-4xl">
+                <nav class="flex items-center gap-2 font-bold text-[10px] text-ink-400 uppercase tracking-[0.16em]"
+                    aria-label="Breadcrumb">
+                    <a href="{{ route('home') }}" class="hover:text-gold-300 transition-colors">Beranda</a>
+                    <span aria-hidden="true">›</span>
+                    <a href="{{ route('bookings.index') }}" class="hover:text-gold-300 transition-colors">Booking Saya</a>
+                    <span aria-hidden="true">›</span>
+                    <span class="text-ink-200" aria-current="page">{{ $booking->booking_code }}</span>
+                </nav>
 
-    <!-- Invoice Header Card -->
-    <div class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl mb-8">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-700">
-            <div>
-                <span class="text-xs text-slate-400 font-mono block">KODE RESERVASI</span>
-                <h1 class="text-2xl font-extrabold text-white font-mono">{{ $booking->booking_code }}</h1>
-            </div>
-
-            <!-- Status Badge -->
-            <div>
-                @if($booking->status === BookingStatus::Confirmed)
-                    <span class="px-4 py-2 text-sm font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl inline-flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Booking Terkonfirmasi (Lunas)
-                    </span>
-                @elseif($booking->status === BookingStatus::Pending)
-                    <span class="px-4 py-2 text-sm font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl inline-flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span> Menunggu Pembayaran
-                    </span>
-                @else
-                    <span class="px-4 py-2 text-sm font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl inline-flex items-center gap-2">
-                        {{ ucfirst($booking->status->value) }}
-                    </span>
-                @endif
-            </div>
-        </div>
-
-        <!-- Apartment & Guest Details -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6 border-b border-slate-700">
-            <div>
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Detail Apartemen</h3>
-                <div class="flex items-center gap-4">
-                    <img src="{{ $booking->apartment->main_image }}" alt="{{ $booking->apartment->title }}" class="w-20 h-20 rounded-xl object-cover">
+                <div class="flex sm:flex-row flex-col sm:justify-between sm:items-end gap-5 mt-6">
                     <div>
-                        <h4 class="font-bold text-white text-base line-clamp-1">{{ $booking->apartment->title }}</h4>
-                        <p class="text-xs text-slate-400 mt-1">{{ $booking->apartment->city }} • {{ $booking->apartment->address }}</p>
+                        <p class="section-eyebrow">Kode reservasi</p>
+                        <h1 class="mt-3 font-mono font-bold text-white text-3xl sm:text-4xl tracking-[0.02em]">
+                            {{ $booking->booking_code }}</h1>
+                        <p class="mt-3 text-ink-400 text-xs">Dibuat pada {{ $booking->created_at->format('d M Y, H:i') }}
+                        </p>
                     </div>
+
+                    <x-booking-status :status="$booking->status" class="self-start sm:self-auto" />
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div>
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Informasi Tamu</h3>
-                <div class="bg-slate-900/60 p-4 rounded-xl space-y-1 text-sm">
-                    <p class="text-white font-bold">{{ $booking->user->name }}</p>
-                    <p class="text-slate-400 text-xs">{{ $booking->user->email }} • {{ $booking->user->phone ?? '-' }}</p>
-                    @if($booking->notes)
-                        <p class="text-xs text-amber-300 pt-2 italic">"Catatan: {{ $booking->notes }}"</p>
+    <section class="bg-ink-950 py-12 sm:py-16">
+        <div class="site-container">
+            <div class="bg-ink-900 mx-auto border border-white/10 max-w-4xl">
+                <div class="gap-10 grid md:grid-cols-2 p-6 sm:p-8 border-white/10 border-b">
+                    <div>
+                        <h2 class="before:hidden section-eyebrow">Unit yang dipesan</h2>
+                        <div class="flex items-start gap-4 mt-5">
+                            <img src="{{ $booking->apartment->main_image_url }}" alt="{{ $booking->apartment->title }}"
+                                width="96" height="96" class="bg-ink-800 w-20 h-20 object-cover shrink-0"
+                                loading="lazy" decoding="async">
+                            <div class="min-w-0">
+                                <h3 class="font-display font-semibold text-white text-lg leading-snug">
+                                    <a href="{{ route('apartments.show', $booking->apartment->slug) }}"
+                                        class="hover:text-gold-300 transition-colors">
+                                        {{ $booking->apartment->title }}
+                                    </a>
+                                </h3>
+                                <p class="mt-1.5 font-bold text-[10px] text-ink-400 uppercase tracking-[0.14em]">
+                                    {{ $booking->apartment->city }} · {{ $booking->apartment->address }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="before:hidden section-eyebrow">Data pemesan</h2>
+                        <dl class="space-y-3 mt-5">
+                            <div>
+                                <dt class="font-bold text-[10px] text-ink-400 uppercase tracking-[0.14em]">Nama</dt>
+                                <dd class="mt-1 font-semibold text-ivory-100 text-sm">{{ $booking->user->name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-bold text-[10px] text-ink-400 uppercase tracking-[0.14em]">Kontak</dt>
+                                <dd class="mt-1 text-ink-200 text-sm break-words">
+                                    {{ $booking->user->email }}
+                                    @if ($booking->user->phone)
+                                        <span class="text-ink-400">·</span> {{ $booking->user->phone }}
+                                    @endif
+                                </dd>
+                            </div>
+                            @if ($booking->notes)
+                                <div>
+                                    <dt class="font-bold text-[10px] text-ink-400 uppercase tracking-[0.14em]">Catatan</dt>
+                                    <dd
+                                        class="mt-1 pl-3 border-gold-400/50 border-l-2 text-ink-200 text-sm italic leading-6">
+                                        {{ $booking->notes }}</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </div>
+                </div>
+                <div class="p-6 sm:p-8 border-white/10 border-b">
+                    <h2 class="before:hidden section-eyebrow">Rincian durasi &amp; biaya</h2>
+
+                    <dl class="space-y-3.5 mt-5">
+                        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                            <dt class="text-ink-300">Check-in</dt>
+                            <dd class="font-semibold text-ivory-100">{{ $booking->check_in->format('d F Y') }} <span
+                                    class="font-normal text-ink-400">(14:00 WIB)</span></dd>
+                        </div>
+                        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                            <dt class="text-ink-300">Check-out</dt>
+                            <dd class="font-semibold text-ivory-100">{{ $booking->check_out->format('d F Y') }} <span
+                                    class="font-normal text-ink-400">(12:00 WIB)</span></dd>
+                        </div>
+                        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                            <dt class="text-ink-300">Jumlah malam</dt>
+                            <dd class="font-semibold text-ivory-100">{{ $booking->total_nights }} malam</dd>
+                        </div>
+                        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                            <dt class="text-ink-300">Tarif per malam</dt>
+                            <dd class="text-ivory-100">IDR {{ number_format($booking->total_price / max($booking->total_nights, 1), 0, ',', '.') }}</dd>
+                        </div>
+                        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                            <dt class="text-ink-300">Subtotal</dt>
+                            <dd class="text-ivory-100">IDR {{ number_format($booking->total_price, 0, ',', '.') }}</dd>
+                        </div>
+                        @if ($booking->payment)
+                            <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+                                <dt class="text-ink-300">Status pembayaran</dt>
+                                <dd class="font-semibold text-ivory-100">{{ $paymentStatusLabel }}</dd>
+                            </div>
+                        @endif
+                        <div
+                            class="flex flex-wrap justify-between items-baseline gap-x-6 gap-y-1 pt-4 border-white/10 border-t">
+                            <dt class="font-bold text-[10px] text-ink-400 uppercase tracking-[0.14em]">Total biaya</dt>
+                            <dd class="font-semibold text-gold-400 text-2xl">IDR
+                                {{ number_format($booking->total_price, 0, ',', '.') }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="p-6 sm:p-8">
+                    @if ($booking->status === BookingStatus::Pending)
+                        <h2 class="font-display font-semibold text-white text-xl">Selesaikan pembayaran</h2>
+                        <p class="mt-2 text-ink-300 text-sm leading-6">
+                            Periksa kembali unit, tanggal, dan total biaya di atas sebelum melanjutkan. Pembayaran
+                            diproses secara aman melalui Midtrans. Reservasi Anda dikonfirmasi otomatis setelah
+                            pembayaran diterima.
+                        </p>
+
+                        @if ($booking->payment && $booking->payment->snap_token)
+                            <button type="button" id="pay-button" class="mt-6 w-full gold-button">
+                                <span>Bayar Sekarang</span>
+                            </button>
+                            <p id="pay-error"
+                                class="hidden bg-rose-500/10 mt-3 px-4 py-3 border border-rose-400/40 text-rose-200 text-xs leading-5"
+                                role="alert">
+                                Pembayaran gagal atau dibatalkan. Silakan coba lagi.
+                            </p>
+                        @else
+                            <p
+                                class="bg-amber-500/10 mt-6 px-4 py-3 border border-amber-400/30 text-amber-200 text-xs leading-5">
+                                Sesi pembayaran belum tersedia. Muat ulang halaman atau coba beberapa saat lagi.
+                            </p>
+                        @endif
+                    @elseif($booking->status === BookingStatus::Confirmed)
+                        <div class="flex items-start gap-4 bg-emerald-500/10 p-5 border border-emerald-400/30">
+                            <svg class="mt-0.5 w-6 h-6 text-emerald-400 shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            <div>
+                                <h2 class="font-bold text-emerald-300 text-sm uppercase tracking-[0.1em]">Pembayaran
+                                    terverifikasi</h2>
+                                <p class="mt-2 text-ink-200 text-sm leading-6">
+                                    Tunjukkan halaman reservasi ini saat kedatangan di resepsionis apartemen.
+                                </p>
+                                {{-- Future improvement: unduh/cetak invoice. Belum ada dokumen
+                                     invoice di backend, jadi tombolnya sengaja tidak dibuat. --}}
+                            </div>
+                        </div>
+                    @elseif($booking->status === BookingStatus::Cancelled)
+                        <div class="flex items-start gap-4 bg-rose-500/10 p-5 border border-rose-400/30">
+                            <svg class="mt-0.5 w-6 h-6 text-rose-400 shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                    d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                            </svg>
+                            <div>
+                                <h2 class="font-bold text-rose-300 text-sm uppercase tracking-[0.1em]">Reservasi dibatalkan
+                                </h2>
+                                <p class="mt-2 text-ink-200 text-sm leading-6">
+                                    Reservasi ini tidak lagi aktif. Anda dapat memesan ulang unit yang sama dari katalog.
+                                </p>
+                                <a href="{{ route('apartments.show', $booking->apartment->slug) }}"
+                                    class="mt-4 gold-button">Pesan ulang unit</a>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex items-start gap-4 bg-white/5 p-5 border border-white/15">
+                            <svg class="mt-0.5 w-6 h-6 text-ink-300 shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                    d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <div>
+                                <h2 class="font-bold text-ink-200 text-sm uppercase tracking-[0.1em]">Menginap selesai</h2>
+                                <p class="mt-2 text-ink-300 text-sm leading-6">
+                                    Terima kasih telah menginap bersama Santhosa.
+                                </p>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Rincian Tanggal & Pembayaran -->
-        <div class="py-6 border-b border-slate-700 space-y-3">
-            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Rincian Durasi & Biaya</h3>
-            <div class="flex justify-between text-sm text-slate-300">
-                <span>Tanggal Check-In</span>
-                <span class="font-semibold text-white">{{ $booking->check_in->format('d F Y') }} (14:00 WIB)</span>
-            </div>
-            <div class="flex justify-between text-sm text-slate-300">
-                <span>Tanggal Check-Out</span>
-                <span class="font-semibold text-white">{{ $booking->check_out->format('d F Y') }} (12:00 WIB)</span>
-            </div>
-            <div class="flex justify-between text-sm text-slate-300">
-                <span>Tarif Sewa ({{ $booking->total_nights }} malam)</span>
-                <span>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
-            </div>
-            <div class="flex justify-between font-extrabold text-lg text-white pt-2 border-t border-slate-700/60">
-                <span>Total Biaya</span>
-                <span class="text-brand-400">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
-            </div>
-        </div>
+    @if ($booking->payment && $booking->payment->snap_token)
+        @push('scripts')
+            <script
+                src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}"
+                data-client-key="{{ config('midtrans.client_key') }}"></script>
+            <script>
+                const payButton = document.getElementById('pay-button');
+                const payError = document.getElementById('pay-error');
 
-        <!-- Payment Actions Section -->
-        <div class="pt-6">
-            @if($booking->status === BookingStatus::Pending)
-                <div class="bg-brand-500/10 border border-brand-500/30 p-6 rounded-2xl space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-white text-base">Selesaikan Pembayaran</h4>
-                            <p class="text-xs text-slate-300">Gunakan Midtrans Snap Gateway atau tombol Simulasi Pembayaran untuk pengujian.</p>
-                        </div>
-                    </div>
+                if (payButton) {
+                    const idleLabel = payButton.innerHTML;
+                    let isProcessing = false;
 
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                        <!-- Midtrans Snap Button -->
-                        @if($booking->payment && $booking->payment->snap_token)
-                            <button id="pay-button" class="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                Bayar Via Midtrans Gateway
-                            </button>
-                        @endif
+                    // .gold-button:disabled sudah menangani opacity + cursor,
+                    // jadi state loading cukup lewat atribut disabled.
+                    const setBusy = (busy) => {
+                        isProcessing = busy;
+                        payButton.disabled = busy;
+                        payButton.setAttribute('aria-busy', String(busy));
+                        payButton.innerHTML = busy ? '<span>Memproses...</span>' : idleLabel;
+                    };
 
-                        <!-- Simulator Button (hanya untuk demo di environment lokal) -->
-                        @if(app()->environment('local'))
-                            <form action="{{ route('payments.simulate', $booking->booking_code) }}" method="POST" class="flex-1">
-                                @csrf
-                                <input type="hidden" name="status" value="settlement">
-                                <button type="submit" class="w-full py-3 px-6 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Simulasi Bayar Lunas (Instant)
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            @elseif($booking->status === BookingStatus::Confirmed)
-                <div class="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-emerald-400 text-base">Pembayaran Berhasil Diverifikasi!</h4>
-                        <p class="text-xs text-slate-300">Tunjukkan bukti invoice reservasi ini saat kedatangan di resepsionis apartemen.</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
+                    payButton.addEventListener('click', function() {
+                        if (isProcessing) return; // hanya buka 1 popup Snap
+                        payError?.classList.add('hidden');
+                        setBusy(true);
 
-@if($booking->payment && $booking->payment->snap_token)
-    <script type="text/javascript" src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
-    <script type="text/javascript">
-        const payButton = document.getElementById('pay-button');
-        if (payButton) {
-            let isProcessing = false;
-
-            payButton.onclick = function () {
-                // Cegah multiple klik — hanya buka 1 popup Snap
-                if (isProcessing) return;
-                isProcessing = true;
-
-                // Disable button & tampilkan loading state
-                payButton.disabled = true;
-                payButton.classList.add('opacity-50', 'cursor-not-allowed');
-                payButton.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Memproses...';
-
-                snap.pay('{{ $booking->payment->snap_token }}', {
-                    onSuccess: function (result) {
-                        window.location.reload();
-                    },
-                    onPending: function (result) {
-                        window.location.reload();
-                    },
-                    onError: function (result) {
-                        alert("Pembayaran gagal atau dibatalkan.");
-                        // Re-enable button agar user bisa coba lagi
-                        isProcessing = false;
-                        payButton.disabled = false;
-                        payButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                        payButton.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Bayar Via Midtrans Gateway';
-                    },
-                    onClose: function () {
-                        // User menutup popup tanpa bayar — re-enable button
-                        isProcessing = false;
-                        payButton.disabled = false;
-                        payButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                        payButton.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Bayar Via Midtrans Gateway';
-                    }
-                });
-            };
-        }
-
-        // Cegah double-submit pada form simulasi pembayaran
-        document.querySelectorAll('form[action*="simulate-payment"]').forEach(function(form) {
-            form.addEventListener('submit', function () {
-                const btn = form.querySelector('button[type="submit"]');
-                if (btn.disabled) {
-                    event.preventDefault();
-                    return;
+                        snap.pay('{{ $booking->payment->snap_token }}', {
+                            onSuccess: function() {
+                                window.location.reload();
+                            },
+                            onPending: function() {
+                                window.location.reload();
+                            },
+                            onError: function() {
+                                payError?.classList.remove('hidden');
+                                setBusy(false);
+                            },
+                            onClose: function() {
+                                // User menutup popup tanpa bayar — bisa coba lagi.
+                                setBusy(false);
+                            },
+                        });
+                    });
                 }
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Memproses...';
-            });
-        });
-    </script>
-@endif
+            </script>
+        @endpush
+    @endif
 @endsection

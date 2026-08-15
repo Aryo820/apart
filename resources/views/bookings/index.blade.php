@@ -2,86 +2,113 @@
 
 @php use App\Enums\BookingStatus; @endphp
 
-@section('title', 'Riwayat Booking - ApartStay')
+@section('title', 'Riwayat Booking — Santhosa')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <div class="mb-8">
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">Riwayat Pemesanan Anda</h1>
-        <p class="text-slate-400 text-sm mt-1">Daftar reservasi apartemen dan status pembayaran Anda.</p>
-    </div>
+    <section class="border-b border-white/10 bg-ink-900">
+        <div class="site-container py-12 sm:py-14">
+            <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
+                <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
+                <span aria-hidden="true">›</span>
+                <span class="text-ink-200" aria-current="page">Booking Saya</span>
+            </nav>
 
-    @if($bookings->isEmpty())
-        <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-12 text-center">
-            <svg class="w-16 h-16 text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <h3 class="text-xl font-bold text-white mb-2">Belum Ada Pemesanan</h3>
-            <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">Anda belum pernah melakukan pemesanan apartemen. Mulai cari apartemen impian Anda sekarang!</p>
-            <a href="{{ route('apartments.index') }}" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl inline-block transition-colors shadow-lg shadow-brand-500/20">
-                Jelajahi Apartemen
-            </a>
+            <div class="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <h1 class="font-display text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">Booking Saya</h1>
+                @if($bookings->total() > 0)
+                    <p class="text-sm leading-7 text-ink-300">
+                        <span class="font-semibold text-ivory-100">{{ $bookings->total() }} reservasi</span> tercatat pada akun Anda.
+                    </p>
+                @endif
+            </div>
         </div>
-    @else
-        <div class="space-y-6">
-            @foreach($bookings as $booking)
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-slate-600 transition-colors">
-                    
-                    <!-- Left: Apartment Info -->
-                    <div class="flex items-center gap-5">
-                        <img src="{{ $booking->apartment->main_image }}" alt="{{ $booking->apartment->title }}" class="w-24 h-24 rounded-xl object-cover flex-shrink-0">
-                        <div>
-                            <span class="text-xs font-mono font-bold text-slate-400 block mb-1">#{{ $booking->booking_code }}</span>
-                            <h3 class="font-bold text-lg text-white line-clamp-1">{{ $booking->apartment->title }}</h3>
-                            <p class="text-xs text-slate-400 mb-2">{{ $booking->apartment->city }} • {{ $booking->apartment->address }}</p>
-                            
-                            <div class="flex items-center gap-4 text-xs text-slate-300">
-                                <span>Check-in: <strong class="text-white">{{ $booking->check_in->format('d M Y') }}</strong></span>
-                                <span>Check-out: <strong class="text-white">{{ $booking->check_out->format('d M Y') }}</strong></span>
-                                <span>({{ $booking->total_nights }} malam)</span>
-                            </div>
-                        </div>
-                    </div>
+    </section>
 
-                    <!-- Right: Status & Action -->
-                    <div class="flex flex-col md:items-end gap-3 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-700">
-                        <!-- Status Badge -->
-                        @if($booking->status === BookingStatus::Confirmed)
-                            <span class="px-3 py-1 text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full inline-flex items-center gap-1">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Confirmed / Lunas
-                            </span>
-                        @elseif($booking->status === BookingStatus::Pending)
-                            <span class="px-3 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full inline-flex items-center gap-1">
-                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Menunggu Pembayaran
-                            </span>
-                        @elseif($booking->status === BookingStatus::Cancelled)
-                            <span class="px-3 py-1 text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full inline-flex items-center gap-1">
-                                Dibatalkan
-                            </span>
-                        @else
-                            <span class="px-3 py-1 text-xs font-bold bg-slate-700 text-slate-300 rounded-full">
-                                {{ ucfirst($booking->status->value) }}
-                            </span>
-                        @endif
-
-                        <div class="text-lg font-extrabold text-brand-400">
-                            Rp {{ number_format($booking->total_price, 0, ',', '.') }}
-                        </div>
-
-                        <a href="{{ route('bookings.show', $booking->booking_code) }}" class="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl text-center transition-colors">
-                            @if($booking->status === BookingStatus::Pending)
-                                Bayar Sekarang
-                            @else
-                                Detail Invoice
-                            @endif
-                        </a>
-                    </div>
-
+    <section class="bg-ink-950 py-12 sm:py-16">
+        <div class="site-container">
+            @if($bookings->isEmpty())
+                <div class="empty-state">
+                    <svg class="h-10 w-10 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" />
+                    </svg>
+                    <h2 class="mt-4 font-display text-2xl text-white">Belum ada reservasi</h2>
+                    <p class="mt-2 max-w-md text-sm leading-6 text-ink-300">
+                        Reservasi yang Anda buat akan tampil di sini beserta status pembayarannya.
+                    </p>
+                    <a href="{{ route('apartments.index') }}" class="gold-button mt-6">Jelajahi katalog unit</a>
                 </div>
-            @endforeach
-        </div>
+            @else
+                <ul class="space-y-4">
+                    @foreach($bookings as $booking)
+                        <li class="border border-white/10 bg-ink-900 transition-colors hover:border-gold-400/30">
+                            <article class="flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="flex min-w-0 items-start gap-5">
+                                    <img
+                                        src="{{ $booking->apartment->main_image_url }}"
+                                        alt="{{ $booking->apartment->title }}"
+                                        width="112"
+                                        height="112"
+                                        class="h-20 w-20 shrink-0 bg-ink-800 object-cover sm:h-28 sm:w-28"
+                                        loading="lazy"
+                                        decoding="async"
+                                    >
+                                    <div class="min-w-0">
+                                        <p class="font-mono text-[11px] font-bold tracking-[0.08em] text-gold-400">{{ $booking->booking_code }}</p>
+                                        <h2 class="mt-1.5 font-display text-xl font-semibold leading-snug text-white">
+                                            <a href="{{ route('bookings.show', $booking->booking_code) }}" class="transition-colors hover:text-gold-300">
+                                                {{ $booking->apartment->title }}
+                                            </a>
+                                        </h2>
+                                        <p class="mt-1 truncate text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">
+                                            {{ $booking->apartment->city }} · {{ $booking->apartment->address }}
+                                        </p>
 
-        <div class="mt-8">
-            {{ $bookings->links() }}
+                                        <dl class="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+                                            <div>
+                                                <dt class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Check-in</dt>
+                                                <dd class="mt-1 text-sm text-ivory-100">{{ $booking->check_in->format('d M Y') }}</dd>
+                                            </div>
+                                            <div>
+                                                <dt class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Check-out</dt>
+                                                <dd class="mt-1 text-sm text-ivory-100">{{ $booking->check_out->format('d M Y') }}</dd>
+                                            </div>
+                                            <div>
+                                                <dt class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Durasi</dt>
+                                                <dd class="mt-1 text-sm text-ivory-100">{{ $booking->total_nights }} malam</dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+                                </div>
+
+                                <div class="flex shrink-0 flex-col gap-4 border-t border-white/10 pt-5 lg:items-end lg:border-0 lg:pt-0">
+                                    <x-booking-status :status="$booking->status" />
+
+                                    <div class="lg:text-right">
+                                        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Total</p>
+                                        <p class="mt-1 text-lg font-semibold text-ivory-100">
+                                            IDR {{ number_format($booking->total_price, 0, ',', '.') }}
+                                        </p>
+                                    </div>
+
+                                    @if($booking->status === BookingStatus::Pending)
+                                        <a href="{{ route('bookings.show', $booking->booking_code) }}" class="gold-button w-full lg:w-auto">
+                                            Bayar Sekarang
+                                        </a>
+                                    @else
+                                        <a href="{{ route('bookings.show', $booking->booking_code) }}" class="inline-flex min-h-11 w-full items-center justify-center border border-white/15 px-5 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white lg:w-auto">
+                                            Lihat detail
+                                        </a>
+                                    @endif
+                                </div>
+                            </article>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <div class="mt-12">
+                    {{ $bookings->links() }}
+                </div>
+            @endif
         </div>
-    @endif
-</div>
+    </section>
 @endsection

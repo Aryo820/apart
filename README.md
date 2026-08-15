@@ -57,7 +57,7 @@ ADMIN_EMAIL / ADMIN_PASSWORD  # kredensial admin seed (jangan kosong di producti
 - Status `capture` diperlakukan terpisah via `fraud_status` (accept/challenge/deny).
 - Idempotensi: payment dengan status final (`settlement/failed/cancel/expire`) tidak diproses ulang; row payment di-lock selama pemrosesan agar webhook ganda tidak balapan.
 - `gross_amount` webhook diverifikasi terhadap nilai payment.
-- Simulator pembayaran (`simulate-payment`) hanya aktif di environment `local`/`testing`.
+- Pembayaran pelanggan hanya diproses melalui Midtrans Snap dan callback terverifikasi; tidak ada endpoint simulasi pembayaran.
 
 ### Status domain (enum tunggal)
 `app/Enums/BookingStatus.php` dan `app/Enums/PaymentStatus.php` — satu sumber kebenaran status, dipakai di controller, model, view, dan panel Filament. Jangan pakai string mentah di kode baru.
@@ -94,7 +94,7 @@ GitHub Actions di `.github/workflows/tests.yml`: composer install → migrate sq
 
 - Semua query parameterized (ORM); output Blade ter-escape; `{!! !!}` hanya dipakai bersama `e()`.
 - Password bcrypt (12 rounds); session di-regenerate saat login/logout.
-- Rate limit: login `10/menit/IP`, register `5/menit/IP`, booking & simulate-payment `10/menit`, cek availability `30/menit` — per-bucket terpisah.
+- Rate limit: login `10/menit/IP`, register `5/menit/IP`, booking `10/menit`, cek availability `30/menit` — per-bucket terpisah.
 - Panel admin: hanya role `admin` via `FilamentUser::canAccessPanel()` **plus** Policy admin-only per resource (defense-in-depth di level Gate).
 - Security headers (nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy, HSTS di production) via middleware global.
 - Webhook Midtrans CSRF-exempt tapi wajib signature valid.

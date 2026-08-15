@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Models\Apartment;
 use App\Models\Booking;
+use App\Models\Facility;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\MidtransService;
@@ -81,7 +82,7 @@ class ApartmentBookingTest extends TestCase
         $detailResponse->assertSee($apartment->title);
     }
 
-    public function test_authenticated_user_can_create_booking_and_simulate_payment(): void
+    public function test_authenticated_user_can_create_booking_and_open_midtrans_payment_page(): void
     {
         $this->seed();
 
@@ -96,17 +97,24 @@ class ApartmentBookingTest extends TestCase
         ]);
         $response->assertRedirect();
 
-        $booking = Booking::where('user_id', $user->id)->first();
-
-        $payResponse = $this->actingAs($user)->post('/booking/'.$booking->booking_code.'/simulate-payment', [
-            'status' => 'settlement',
-        ]);
-        $payResponse->assertRedirect();
+        $booking = Booking::where('user_id', $user->id)->latest('id')->firstOrFail();
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
-            'status' => 'confirmed',
+            'status' => 'pending',
         ]);
+
+        $this->assertDatabaseHas('payments', [
+            'booking_id' => $booking->id,
+            'snap_token' => self::SNAP_TOKEN,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/booking/'.$booking->booking_code)
+            ->assertOk()
+            ->assertSee('Bayar')
+            ->assertDontSee('Bayar Lunas');
     }
 
     public function test_booking_creates_a_payment_row_with_snap_token(): void
@@ -174,6 +182,182 @@ class ApartmentBookingTest extends TestCase
 
         $response->assertSessionHasErrors('check_in');
         $this->assertDatabaseCount('bookings', 1);
+    }
+
+    public function test_relative_image_paths_render_as_storage_urls(): void
+    {
+        // Filament stores a relative disk path; printing the raw column made
+        // the browser resolve it against the page URL (404 on every page).
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment([
+            'main_image' => 'apartments/main/unit.jpg',
+            'images' => ['apartments/gallery/one.jpg'],
+        ]);
+        $booking = $this->makeBooking($apartment, $user);
+
+        foreach (['/apartments', '/apartments/'.$apartment->slug] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertSee('/storage/apartments/main/unit.jpg', false)
+                ->assertDontSee('src="apartments/main/unit.jpg"', false);
+        }
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertSee('/storage/apartments/gallery/one.jpg', false);
+
+        foreach (['/my-bookings', '/booking/'.$booking->booking_code] as $url) {
+            $this->actingAs($user)->get($url)
+                ->assertOk()
+                ->assertSee('/storage/apartments/main/unit.jpg', false)
+                ->assertDontSee('src="apartments/main/unit.jpg"', false);
+        }
+    }
+
+    public function test_absolute_image_urls_are_left_untouched(): void
+    {
+        $apartment = $this->makeApartment(['main_image' => 'https://example.com/img.jpg']);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('https://example.com/img.jpg', false);
+    }
+
+    public function test_conflicting_booking_keeps_submitted_dates_on_the_form(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment();
+        $this->makeBooking($apartment, $user); // confirmed, +2..+5
+
+        $checkIn = now()->addDays(4)->format('Y-m-d');
+        $checkOut = now()->addDays(6)->format('Y-m-d');
+
+        $this->actingAs($user)
+            ->from('/apartments/'.$apartment->slug)
+            ->post('/booking', [
+                'apartment_id' => $apartment->id,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'notes' => 'Tiba malam',
+            ])
+            ->assertRedirect('/apartments/'.$apartment->slug);
+
+        // The form must come back populated, with the error next to the field.
+        $this->actingAs($user)->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('value="'.$checkIn.'"', false)
+            ->assertSee('value="'.$checkOut.'"', false)
+            ->assertSee('Tiba malam', false)
+            ->assertSee('id="check_in_error"', false)
+            ->assertSee('Apartemen ini tidak tersedia pada tanggal yang Anda pilih');
+    }
+
+    public function test_listing_paginates_with_the_published_ink_pagination_view(): void
+    {
+        // paginate(9) — 10 units forces a second page.
+        for ($i = 0; $i < 10; $i++) {
+            $this->makeApartment(['title' => 'Unit '.$i]);
+        }
+
+        $response = $this->get('/apartments')->assertOk();
+
+        $response->assertSee('Pagination Navigation', false)
+            ->assertSee('page=2', false)
+            // the framework default (light theme) must not be in use anymore
+            ->assertDontSee('dark:bg-gray-800', false);
+
+        $this->get('/apartments?page=2')
+            ->assertOk()
+            ->assertSee('Menampilkan 10–10 dari 10 unit', false);
+    }
+
+    public function test_listing_filters_come_back_populated_in_the_sidebar(): void
+    {
+        $this->makeApartment(['title' => 'Murah', 'price_per_night' => 200000, 'city' => 'Bandung', 'capacity' => 2]);
+        $this->makeApartment(['title' => 'Mahal', 'price_per_night' => 900000, 'city' => 'Bandung', 'capacity' => 6]);
+
+        $response = $this->get('/apartments?'.http_build_query([
+            'city' => 'Bandung',
+            'min_price' => 100000,
+            'max_price' => 500000,
+            'capacity' => 2,
+        ]))->assertOk();
+
+        $response->assertSee('Murah')
+            ->assertDontSee('>Mahal<', false)
+            ->assertSee('value="100000"', false)
+            ->assertSee('value="500000"', false)
+            ->assertSee('4 filter aktif');
+    }
+
+    public function test_detail_page_still_shows_every_field_after_the_restyle(): void
+    {
+        $apartment = $this->makeApartment([
+            'title' => 'Unit Uji Detail',
+            'description' => "Baris pertama.\nBaris kedua.",
+            'bedrooms' => 3,
+            'bathrooms' => 2,
+            'area_sqm' => 96,
+            'capacity' => 5,
+            'price_per_night' => 1250000,
+        ]);
+        $apartment->facilities()->attach(Facility::create(['name' => 'Kolam Renang', 'icon' => 'pool']));
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('Unit Uji Detail')
+            ->assertSee($apartment->address)
+            ->assertSee($apartment->city)
+            ->assertSee('IDR 1.250.000', false)
+            ->assertSee('3 kamar')      // bedrooms
+            ->assertSee('2 kamar')      // bathrooms
+            ->assertSee('96 m²', false)
+            ->assertSee('5 orang')
+            ->assertSee('Baris pertama.<br />', false) // nl2br masih aktif
+            ->assertSee('Kolam Renang')
+            // kontrak form yang dipakai kalkulator harga tidak boleh berubah
+            ->assertSee('id="priceCalculationCard"', false)
+            ->assertSee('id="calcTotalPrice"', false)
+            ->assertSee('name="apartment_id"', false);
+    }
+
+    public function test_every_booking_status_gets_its_own_label_on_both_pages(): void
+    {
+        // Sebelumnya Completed ikut jatuh ke cabang merah "dibatalkan".
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment();
+
+        $expected = [
+            BookingStatus::Pending->value => 'Menunggu pembayaran',
+            BookingStatus::Confirmed->value => 'Terkonfirmasi',
+            BookingStatus::Cancelled->value => 'Dibatalkan',
+            BookingStatus::Completed->value => 'Selesai',
+        ];
+
+        $codes = [];
+        $offset = 0;
+        foreach (array_keys($expected) as $status) {
+            $booking = $this->makeBooking($apartment, $user, [
+                'status' => $status,
+                'check_in' => now()->addDays($offset += 10)->toDateString(),
+                'check_out' => now()->addDays($offset += 2)->toDateString(),
+            ]);
+            $codes[$status] = $booking->booking_code;
+        }
+
+        $list = $this->actingAs($user)->get('/my-bookings')->assertOk();
+        foreach ($expected as $label) {
+            $list->assertSee($label);
+        }
+
+        foreach ($expected as $status => $label) {
+            $this->actingAs($user)->get('/booking/'.$codes[$status])
+                ->assertOk()
+                ->assertSee($label);
+        }
+
+        // Booking yang selesai tidak boleh dibaca sebagai gagal.
+        $this->actingAs($user)->get('/booking/'.$codes[BookingStatus::Completed->value])
+            ->assertDontSee('Dibatalkan');
     }
 
     public function test_adjacent_checkout_and_checkin_are_allowed(): void
@@ -274,6 +458,85 @@ class ApartmentBookingTest extends TestCase
         $this->assertSame(UserRole::User, $user->fresh()->role);
         $this->assertFalse($user->fresh()->isAdmin());
         $this->assertTrue(User::factory()->create(['role' => 'admin'])->fresh()->isAdmin());
+    }
+
+    public function test_detail_page_exposes_booked_ranges_so_the_picker_can_block_them(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment();
+        $blocked = $this->makeBooking($apartment, $user); // confirmed, +2..+5
+        $free = $this->makeBooking($apartment, $user, [   // cancelled — tidak memblokir
+            'status' => BookingStatus::Cancelled,
+            'check_in' => now()->addDays(20)->toDateString(),
+            'check_out' => now()->addDays(22)->toDateString(),
+        ]);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('Tanggal tidak tersedia (1 periode)')
+            ->assertSee($blocked->check_in->format('Y-m-d'), false)
+            ->assertDontSee($free->check_in->format('Y-m-d'), false)
+            // endpoint availability harus terpasang di form (URL di-escape @json)
+            ->assertSee('apartments\/'.$apartment->id.'\/availability', false)
+            ->assertSee('id="availabilityMessage"', false);
+    }
+
+    public function test_detail_page_shows_the_full_price_breakdown_fields(): void
+    {
+        $apartment = $this->makeApartment(['price_per_night' => 750000]);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('IDR 750.000', false)
+            ->assertSee('Subtotal')
+            ->assertSee('id="calcSubtotal"', false)
+            ->assertSee('id="calcNights"', false)
+            ->assertSee('id="calcTotalPrice"', false);
+    }
+
+    public function test_review_page_shows_every_field_the_guest_must_check_before_paying(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment(['price_per_night' => 500000]);
+        $booking = $this->makeBooking($apartment, $user, ['status' => BookingStatus::Pending]);
+        Payment::create([
+            'booking_id' => $booking->id,
+            'gross_amount' => $booking->total_price,
+            'snap_token' => self::SNAP_TOKEN,
+            'status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($user)->get('/booking/'.$booking->booking_code)
+            ->assertOk()
+            ->assertSee($booking->booking_code)
+            ->assertSee($apartment->title)
+            ->assertSee($booking->check_in->format('d F Y'))
+            ->assertSee($booking->check_out->format('d F Y'))
+            ->assertSee('3 malam')
+            ->assertSee('IDR 500.000', false)          // tarif per malam
+            ->assertSee('IDR 1.500.000', false)        // subtotal + total
+            ->assertSee('Status pembayaran')
+            ->assertSee('Menunggu pembayaran')
+            ->assertSee('Bayar Sekarang');
+    }
+
+    public function test_paid_booking_reports_settlement_as_the_payment_status(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment();
+        $booking = $this->makeBooking($apartment, $user, ['status' => BookingStatus::Confirmed]);
+        Payment::create([
+            'booking_id' => $booking->id,
+            'gross_amount' => $booking->total_price,
+            'snap_token' => self::SNAP_TOKEN,
+            'status' => PaymentStatus::Settlement,
+        ]);
+
+        $this->actingAs($user)->get('/booking/'.$booking->booking_code)
+            ->assertOk()
+            ->assertSee('Lunas')
+            ->assertSee('Pembayaran')
+            ->assertDontSee('Bayar Sekarang');
     }
 
     public function test_payment_status_enum_cast_roundtrip(): void

@@ -6,9 +6,7 @@ use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Booking;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -137,49 +135,4 @@ class PaymentController extends Controller
         return app()->isLocal() && Str::contains($serverKey, 'Demo');
     }
 
-    public function simulatePayment(Request $request, string $code)
-    {
-        // Simulator pembayaran hanya untuk demo/pengujian di environment lokal.
-        abort_unless(app()->environment('local', 'testing'), 404);
-
-        $validated = $request->validate([
-            'status' => 'nullable|in:settlement,cancel,expire,failed',
-        ]);
-        $targetStatus = PaymentStatus::from($validated['status'] ?? 'settlement');
-
-        $booking = Booking::with('payment')->where('booking_code', $code)->firstOrFail();
-
-        // Hanya pemilik booking (atau admin) yang boleh mengubah statusnya.
-        /** @var User|null $user */
-        $user = Auth::user();
-        abort_unless(
-            Auth::id() === $booking->user_id || $user?->isAdmin(),
-            403
-        );
-
-        // Idempotency: jangan proses jika booking sudah bukan pending.
-        // Ini mencegah double-click yang bisa mengubah status yang sudah final.
-        if ($booking->status !== BookingStatus::Pending) {
-            return redirect()->route('bookings.show', $code)
-                ->with('success', 'Booking ini sudah diproses sebelumnya.');
-        }
-
-        if ($booking->payment) {
-            $booking->payment->update([
-                'status' => $targetStatus,
-                'transaction_id' => 'TRX-SIMULATED-'.strtoupper(Str::random(8)),
-                'payment_type' => 'simulation_qris',
-            ]);
-        }
-
-        if ($targetStatus === PaymentStatus::Settlement) {
-            $booking->update(['status' => BookingStatus::Confirmed]);
-            $msg = 'Pembayaran berhasil disimulasikan! Booking Anda telah TERKONFIRMASI.';
-        } else {
-            $booking->update(['status' => BookingStatus::Cancelled]);
-            $msg = 'Status pembayaran diubah menjadi '.strtoupper($targetStatus->value);
-        }
-
-        return redirect()->route('bookings.show', $code)->with('success', $msg);
-    }
 }

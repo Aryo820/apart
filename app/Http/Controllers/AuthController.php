@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -50,7 +51,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/')->with('success', 'Akun berhasil dibuat! Selamat datang di ApartStay.');
+        return redirect('/')->with('success', 'Akun berhasil dibuat! Selamat datang di Santhosa.');
     }
 
     public function logout(Request $request)

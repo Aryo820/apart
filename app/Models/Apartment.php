@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Apartment extends Model
@@ -46,6 +47,44 @@ class Apartment extends Model
                 $apartment->slug = Str::slug($apartment->title).'-'.Str::random(5);
             }
         });
+    }
+
+    /**
+     * Resolve a stored image path into a usable URL. Filament writes relative
+     * disk paths ('apartments/main/x.jpg') while the seeder writes absolute
+     * URLs — both have to render, so views go through here instead of
+     * printing the raw column (which browsers resolve against the page URL).
+     */
+    public static function resolveImageUrl(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://', '//'])) {
+            return $path;
+        }
+
+        if (Str::startsWith($path, ['/', 'storage/'])) {
+            return asset(ltrim($path, '/'));
+        }
+
+        return Storage::url($path);
+    }
+
+    public function getMainImageUrlAttribute(): ?string
+    {
+        return static::resolveImageUrl($this->main_image);
+    }
+
+    /** @return array<int, string> */
+    public function getGalleryUrlsAttribute(): array
+    {
+        return collect($this->images ?? [])
+            ->map(fn ($path) => static::resolveImageUrl($path))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function facilities(): BelongsToMany

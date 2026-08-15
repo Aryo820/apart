@@ -1,46 +1,59 @@
 @extends('layouts.app')
 
-@section('title', 'Masuk Akun - ApartStay')
+@section('title', 'Masuk — Santhosa')
 
 @section('content')
-<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full bg-slate-800/90 border border-slate-700/90 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
-        <div class="text-center mb-8">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-teal-400 flex items-center justify-center text-white font-bold text-xl mx-auto mb-3 shadow-lg shadow-brand-500/20">
-                A
+    <section class="bg-ink-950 py-16 sm:py-24">
+        <div class="site-container">
+            <div class="mx-auto max-w-md border border-white/10 bg-ink-900 p-7 sm:p-9">
+                <p class="section-eyebrow before:hidden">Akun Santhosa</p>
+                <h1 class="mt-3 font-display text-3xl font-semibold tracking-[-0.025em] text-white">Selamat datang kembali</h1>
+                <p class="mt-3 text-sm leading-6 text-ink-300">Masuk untuk melanjutkan reservasi dan melihat riwayat booking Anda.</p>
+
+                <form action="{{ route('login') }}" method="POST" class="mt-8 space-y-4" data-submit-loading>
+                    @csrf
+
+                    <div>
+                        <label class="search-field @error('email') border-rose-400/70 @enderror">
+                            <span class="search-field__label">Alamat email</span>
+                            <input type="email" name="email" id="email" value="{{ old('email') }}" required autocomplete="email"
+                                placeholder="nama@email.com"
+                                @error('email') aria-invalid="true" aria-describedby="email_error" @enderror
+                                class="search-field__control">
+                        </label>
+                        @error('email')
+                            <p id="email_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="search-field @error('password') border-rose-400/70 @enderror">
+                            <span class="search-field__label">Password</span>
+                            <input type="password" name="password" id="password" required autocomplete="current-password"
+                                placeholder="••••••••"
+                                @error('password') aria-invalid="true" aria-describedby="password_error" @enderror
+                                class="search-field__control">
+                        </label>
+                        @error('password')
+                            <p id="password_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <label class="flex min-h-11 cursor-pointer items-center gap-2.5 text-xs text-ink-300">
+                        <input type="checkbox" name="remember" value="1" class="h-4 w-4 shrink-0 accent-gold-400">
+                        <span>Ingat saya di perangkat ini</span>
+                    </label>
+
+                    <button type="submit" class="gold-button w-full" data-loading-label="Memproses...">
+                        <span>Masuk</span>
+                    </button>
+                </form>
+
+                <p class="mt-7 border-t border-white/10 pt-6 text-xs text-ink-400">
+                    Belum memiliki akun?
+                    <a href="{{ route('register') }}" class="font-bold text-gold-400 transition-colors hover:text-gold-200">Daftar sekarang</a>
+                </p>
             </div>
-            <h2 class="text-2xl font-extrabold text-white">Selamat Datang Kembali</h2>
-            <p class="text-xs text-slate-400 mt-1">Masuk ke akun Anda untuk mengelola booking apartemen.</p>
         </div>
-
-        <form action="{{ route('login') }}" method="POST" class="space-y-5">
-            @csrf
-            <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Email Address</label>
-                <input type="email" name="email" value="{{ old('email') }}" required placeholder="nama@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
-                <input type="password" name="password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div class="flex items-center justify-between text-xs">
-                <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
-                    <input type="checkbox" name="remember" class="rounded bg-slate-900 border-slate-700 text-brand-500 focus:ring-0">
-                    <span>Ingat saya</span>
-                </label>
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-brand-500/25 transition-all">
-                Masuk
-            </button>
-        </form>
-
-        <div class="mt-6 pt-6 border-t border-slate-700/80 text-center text-xs text-slate-400">
-            <span>Belum memiliki akun?</span>
-            <a href="{{ route('register') }}" class="text-brand-400 font-bold hover:underline ml-1">Daftar Akun Baru</a>
-        </div>
-    </div>
-</div>
+    </section>
 @endsection

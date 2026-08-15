@@ -1,106 +1,160 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar Apartemen - ApartStay')
+@section('title', 'Katalog Unit — Santhosa')
+@section('meta_description', 'Telusuri koleksi apartemen premium Santhosa berdasarkan kota, kapasitas, dan rentang harga.')
+
+@php
+    $activeFilters = collect(request()->only(['search', 'city', 'min_price', 'max_price', 'bedrooms', 'capacity']))
+        ->filter(fn ($value) => filled($value));
+@endphp
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">Daftar Apartemen</h1>
-        <p class="text-slate-400 text-sm mt-1">Temukan dan sewa unit apartemen terbaik di berbagai lokasi strategis.</p>
-    </div>
+    <section class="border-b border-white/10 bg-ink-900">
+        <div class="site-container py-14 sm:py-16">
+            <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
+                <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
+                <span aria-hidden="true">›</span>
+                <span class="text-ink-200" aria-current="page">Katalog Unit</span>
+            </nav>
 
-    <!-- Filter Bar -->
-    <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl mb-10 shadow-lg">
-        <form action="{{ route('apartments.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Cari Nama / Alamat</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik kata kunci..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+            <div class="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <h1 class="font-display text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">Katalog Unit</h1>
+                <p class="max-w-md text-sm leading-7 text-ink-300">
+                    Menampilkan <span class="font-semibold text-ivory-100">{{ $apartments->total() }} unit</span>
+                    yang tersedia untuk disewa saat ini.
+                </p>
             </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Kota</label>
-                <select name="city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
-                    <option value="">Semua Kota</option>
-                    @foreach($cities as $city)
-                        <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>{{ $city }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Maks / Malam</label>
-                <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="Rp maks..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Urutkan</label>
-                <select name="sort" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
-                    <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Terbaru</option>
-                    <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Harga Termurah</option>
-                    <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Harga Tertinggi</option>
-                </select>
-            </div>
-
-            <div class="flex items-end gap-2">
-                <button type="submit" class="flex-1 py-2 px-4 bg-brand-500 hover:bg-brand-600 font-semibold text-sm text-white rounded-xl transition-colors">Filter</button>
-                <a href="{{ route('apartments.index') }}" class="py-2 px-3 bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 rounded-xl transition-colors">Reset</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Apartments Grid -->
-    @if($apartments->isEmpty())
-        <div class="text-center py-16 bg-slate-800/40 border border-slate-800 rounded-2xl">
-            <svg class="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-            <h3 class="text-lg font-bold text-white mb-1">Apartemen Tidak Ditemukan</h3>
-            <p class="text-sm text-slate-400">Coba atur ulang filter pencarian Anda untuk melihat pilihan lainnya.</p>
         </div>
-    @else
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-            @foreach($apartments as $apt)
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-xl transition-all duration-300 group flex flex-col">
-                    <div class="relative h-56 overflow-hidden">
-                        <img src="{{ $apt->main_image }}" alt="{{ $apt->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <span class="absolute top-3 left-3 bg-brand-500/90 text-white font-bold text-xs px-2.5 py-1 rounded-md backdrop-blur-md">
-                            {{ $apt->city }}
-                        </span>
-                        <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-700">
-                            <span class="text-[10px] text-slate-400 block">Harga / malam</span>
-                            <span class="text-sm font-extrabold text-brand-400">Rp {{ number_format($apt->price_per_night, 0, ',', '.') }}</span>
+    </section>
+
+    <section class="bg-ink-950 py-12 sm:py-16">
+        <div class="site-container grid gap-10 lg:grid-cols-[248px_1fr] lg:gap-14">
+            {{-- Sidebar filter: <details> supaya bisa dilipat di mobile tanpa JS,
+                 dan selalu terbuka di lg karena summary-nya disembunyikan. --}}
+            <details open class="h-max border border-white/10 bg-ink-900/60 lg:sticky lg:top-24 lg:border-0 lg:bg-transparent">
+                <summary class="flex min-h-12 cursor-pointer items-center justify-between px-4 text-xs font-bold uppercase tracking-[0.16em] text-ivory-100 lg:hidden">
+                    Filter &amp; Urutkan
+                    @if($activeFilters->isNotEmpty())
+                        <span class="ml-2 bg-gold-400 px-2 py-0.5 text-[10px] font-extrabold text-ink-950">{{ $activeFilters->count() }}</span>
+                    @endif
+                </summary>
+
+                <form action="{{ route('apartments.index') }}" method="GET" class="space-y-7 border-t border-white/10 p-4 lg:border-0 lg:p-0" data-submit-loading>
+                    <div>
+                        <h2 class="section-eyebrow before:hidden">Cari unit</h2>
+                        <label class="search-field mt-4">
+                            <span class="search-field__label">Nama atau alamat</span>
+                            <input type="search" name="search" value="{{ request('search') }}" placeholder="Contoh: Sudirman" autocomplete="off" class="search-field__control">
+                        </label>
+                    </div>
+
+                    <div>
+                        <h2 class="section-eyebrow before:hidden">Lokasi &amp; tamu</h2>
+                        <div class="mt-4 space-y-2">
+                            <label class="search-field">
+                                <span class="search-field__label">Kota</span>
+                                <select name="city" class="search-field__control">
+                                    <option value="">Semua kota</option>
+                                    @foreach($cities as $city)
+                                        <option value="{{ $city }}" @selected(request('city') == $city)>{{ $city }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label class="search-field">
+                                <span class="search-field__label">Jumlah tamu</span>
+                                <input type="number" name="capacity" value="{{ request('capacity') }}" min="1" inputmode="numeric" placeholder="Semua kapasitas" class="search-field__control">
+                            </label>
                         </div>
                     </div>
 
-                    <div class="p-5 flex-grow flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-bold text-lg text-white group-hover:text-brand-400 transition-colors line-clamp-1 mb-1">{{ $apt->title }}</h3>
-                            <p class="text-xs text-slate-400 mb-3 line-clamp-1 flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                                {{ $apt->address }}
+                    <div>
+                        <h2 class="section-eyebrow before:hidden">Rentang harga</h2>
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <label class="search-field">
+                                <span class="search-field__label">Min / malam</span>
+                                <input type="number" name="min_price" value="{{ request('min_price') }}" min="0" step="50000" inputmode="numeric" placeholder="IDR 0" class="search-field__control">
+                            </label>
+                            <label class="search-field">
+                                <span class="search-field__label">Maks / malam</span>
+                                <input type="number" name="max_price" value="{{ request('max_price') }}" min="0" step="50000" inputmode="numeric" placeholder="Tanpa batas" class="search-field__control">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="section-eyebrow before:hidden">Urutan</h2>
+                        <label class="search-field mt-4">
+                            <span class="search-field__label">Tampilkan berdasarkan</span>
+                            <select name="sort" class="search-field__control">
+                                <option value="newest" @selected(request('sort', 'newest') === 'newest')>Terbaru</option>
+                                <option value="price_low" @selected(request('sort') === 'price_low')>Harga termurah</option>
+                                <option value="price_high" @selected(request('sort') === 'price_high')>Harga tertinggi</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="flex flex-col gap-2 border-t border-white/10 pt-6">
+                        <button type="submit" class="gold-button w-full" data-loading-label="Mencari...">
+                            <span>Terapkan filter</span>
+                        </button>
+                        @if($activeFilters->isNotEmpty() || request('sort'))
+                            <a href="{{ route('apartments.index') }}" class="inline-flex min-h-11 items-center justify-center border border-white/15 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white">
+                                Reset filter
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </details>
+
+            <div class="min-w-0">
+                @if($apartments->isEmpty())
+                    @php $isFiltered = $activeFilters->isNotEmpty(); @endphp
+                    <div class="empty-state">
+                        <svg class="h-10 w-10 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 7h2m-2 4h2m2-4h2m-2 4h2m-6 10v-5h6v5" />
+                        </svg>
+                        <h2 class="mt-4 font-display text-2xl text-white">
+                            {{ $isFiltered ? 'Unit tidak ditemukan' : 'Belum ada unit tersedia' }}
+                        </h2>
+                        <p class="mt-2 max-w-md text-sm leading-6 text-ink-300">
+                            {{ $isFiltered
+                                ? 'Tidak ada unit yang cocok dengan filter Anda. Coba longgarkan rentang harga atau pilih kota lain.'
+                                : 'Saat ini tidak ada unit yang dibuka untuk reservasi. Unit baru akan tampil di halaman ini begitu tersedia.' }}
+                        </p>
+                        @if($isFiltered)
+                            <a href="{{ route('apartments.index') }}" class="gold-button mt-6">Reset filter</a>
+                        @else
+                            <a href="{{ route('home') }}" class="gold-button mt-6">Kembali ke beranda</a>
+                        @endif
+                    </div>
+                @else
+                    <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-white/10 pb-5">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400">
+                            Menampilkan {{ $apartments->firstItem() }}–{{ $apartments->lastItem() }} dari {{ $apartments->total() }} unit
+                        </p>
+                        @if($activeFilters->isNotEmpty())
+                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-gold-400">
+                                {{ $activeFilters->count() }} filter aktif
                             </p>
-
-                            <div class="flex items-center gap-3 text-xs text-slate-300 py-2.5 border-y border-slate-700/60 mb-4">
-                                <span>{{ $apt->bedrooms }} Bed</span>
-                                <span>•</span>
-                                <span>{{ $apt->bathrooms }} Bath</span>
-                                <span>•</span>
-                                <span>{{ $apt->area_sqm }} m²</span>
-                                <span>•</span>
-                                <span>Maks {{ $apt->capacity }} Tamu</span>
-                            </div>
-                        </div>
-
-                        <a href="{{ route('apartments.show', $apt->slug) }}" class="w-full py-2.5 bg-slate-700/60 hover:bg-brand-600 text-white font-semibold text-sm rounded-xl text-center transition-colors">
-                            Lihat Detail
-                        </a>
+                        @endif
                     </div>
-                </div>
-            @endforeach
-        </div>
 
-        <div class="mt-8">
-            {{ $apartments->links() }}
+                    <div class="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2">
+                        @foreach($apartments as $apt)
+                            <x-apartment-card
+                                :apartment="$apt"
+                                :priority="$loop->first"
+                                aspect="aspect-[16/11]"
+                            />
+                        @endforeach
+                    </div>
+
+                    <div class="mt-14">
+                        {{ $apartments->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
-    @endif
-</div>
+    </section>
 @endsection

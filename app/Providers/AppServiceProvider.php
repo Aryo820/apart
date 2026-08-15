@@ -49,15 +49,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         // Bagikan daftar kota populer (dari DB) ke layout utama agar footer
-        // tidak lagi meng-hardcode nama kota.
+        // tidak lagi meng-hardcode nama kota. Dibungkus rescue() karena layout
+        // ini juga dipakai halaman error: kalau DB-nya yang tumbang, halaman
+        // 500/503 tidak boleh ikut gagal render.
         View::composer('layouts.app', function ($view) {
-            $view->with('popularCities', Apartment::query()
+            $view->with('popularCities', rescue(fn () => Apartment::query()
                 ->where('status', ApartmentStatus::Available)
                 ->select('city')
                 ->groupBy('city')
                 ->orderByRaw('COUNT(*) DESC')
                 ->limit(4)
-                ->pluck('city'));
+                ->pluck('city'), collect(), report: false));
         });
     }
 }
