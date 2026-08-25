@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\ApartmentResource\Pages;
 
+use App\Filament\Actions\GuardedDeleteAction;
 use App\Filament\Resources\ApartmentResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditApartment extends EditRecord
@@ -13,7 +13,7 @@ class EditApartment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            GuardedDeleteAction::make('Apartemen tidak dapat dihapus karena masih memiliki riwayat reservasi.'),
         ];
     }
 }

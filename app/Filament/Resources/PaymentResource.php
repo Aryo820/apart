@@ -5,13 +5,24 @@ namespace App\Filament\Resources;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Payment;
-use Filament\Actions;
-use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+/**
+ * Payment adalah CATATAN dari Midtrans, bukan data yang di-maintain admin.
+ *
+ * Resource ini sengaja read-only. Satu-satunya penulis status payment adalah
+ * PaymentStatusApplier, yang dipanggil webhook dan rekonsiliasi setelah
+ * nilainya dibuktikan berasal dari gateway (signature SHA-512 / permintaan
+ * server-ke-server). Nominalnya juga bukan angka bebas: ia adalah pembanding
+ * yang dipakai applier untuk menolak notifikasi yang nominalnya tidak cocok.
+ *
+ * Karena itu tidak ada form, tidak ada create/edit page, dan tidak ada action
+ * yang menulis. Batas sesungguhnya bukan di sini melainkan di PaymentPolicy,
+ * yang menolak create/update/delete untuk semua orang — UI yang tidak
+ * menampilkan tombol bukan authorization.
+ */
 class PaymentResource extends Resource
 {
     protected static ?string $model = Payment::class;
@@ -21,29 +32,6 @@ class PaymentResource extends Resource
     protected static string|\UnitEnum|null $navigationGroup = 'Operations';
 
     protected static ?int $navigationSort = 2;
-
-    public static function form(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                Forms\Components\Select::make('booking_id')
-                    ->relationship('booking', 'booking_code')
-                    ->required(),
-
-                Forms\Components\TextInput::make('transaction_id'),
-
-                Forms\Components\TextInput::make('payment_type'),
-
-                Forms\Components\TextInput::make('gross_amount')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->required(),
-
-                Forms\Components\Select::make('status')
-                    ->options(fn () => PaymentStatus::options())
-                    ->required(),
-            ]);
-    }
 
     public static function table(Table $table): Table
     {
@@ -93,9 +81,6 @@ class PaymentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(fn () => PaymentStatus::options()),
-            ])
-            ->actions([
-                Actions\EditAction::make(),
             ]);
     }
 

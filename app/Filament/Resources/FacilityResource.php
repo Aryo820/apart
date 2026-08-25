@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\GuardedDeleteAction;
 use App\Filament\Resources\FacilityResource\Pages;
 use App\Models\Facility;
 use Filament\Actions;
@@ -69,11 +70,12 @@ class FacilityResource extends Resource
             ])
             ->actions([
                 Actions\EditAction::make(),
-                Actions\DeleteAction::make(),
+                GuardedDeleteAction::make('Fasilitas tidak dapat dihapus karena masih digunakan oleh apartemen.'),
             ])
             ->bulkActions([
                 Actions\BulkActionGroup::make([
-                    Actions\DeleteBulkAction::make(),
+                    Actions\DeleteBulkAction::make()
+                        ->authorizeIndividualRecords('delete'),
                 ]),
             ]);
     }

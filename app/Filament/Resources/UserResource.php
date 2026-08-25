@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\UserRole;
+use App\Filament\Actions\GuardedDeleteAction;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Actions;
@@ -96,7 +97,7 @@ class UserResource extends Resource
             ])
             ->actions([
                 Actions\EditAction::make(),
-                Actions\DeleteAction::make(),
+                GuardedDeleteAction::make('Pengguna tidak dapat dihapus karena masih memiliki riwayat reservasi.'),
             ]);
     }
 

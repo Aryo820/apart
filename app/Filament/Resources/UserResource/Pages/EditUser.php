@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\UserResource\Pages;
 
+use App\Filament\Actions\GuardedDeleteAction;
 use App\Filament\Resources\UserResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditUser extends EditRecord
@@ -13,7 +13,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            GuardedDeleteAction::make('Pengguna tidak dapat dihapus karena masih memiliki riwayat reservasi.'),
         ];
     }
 }

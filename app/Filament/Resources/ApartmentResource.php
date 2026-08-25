@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ApartmentStatus;
+use App\Filament\Actions\GuardedDeleteAction;
 use App\Filament\Resources\ApartmentResource\Pages;
 use App\Models\Apartment;
 use Filament\Actions;
@@ -54,6 +55,8 @@ class ApartmentResource extends Resource
                         Forms\Components\TextInput::make('price_per_night')
                             ->required()
                             ->numeric()
+                            ->integer()
+                            ->minValue(1)
                             ->prefix('Rp')
                             ->label('Price per Night'),
 
@@ -112,14 +115,23 @@ class ApartmentResource extends Resource
 
                 Section::make('Media Gallery')
                     ->schema([
+                        // ->disk('public') eksplisit, tidak mengikuti
+                        // FILESYSTEM_DISK: Apartment::resolveImageUrl membangun
+                        // URL dari disk yang sama, jadi penulis file dan pembuat
+                        // URL tidak bisa berbeda karena satu variabel .env.
+                        // Disk 'local' menulis ke storage/app/private yang tidak
+                        // pernah dilayani lewat HTTP.
                         Forms\Components\FileUpload::make('main_image')
                             ->image()
+                            ->disk('public')
                             ->directory('apartments/main')
-                            ->required(),
+                            ->dehydrated(fn (mixed $state): bool => filled($state))
+                            ->required(fn (string $operation): bool => $operation === 'create'),
 
                         Forms\Components\FileUpload::make('images')
                             ->image()
                             ->multiple()
+                            ->disk('public')
                             ->directory('apartments/gallery')
                             ->panelLayout('grid'),
                     ]),
@@ -181,11 +193,12 @@ class ApartmentResource extends Resource
             ])
             ->actions([
                 Actions\EditAction::make(),
-                Actions\DeleteAction::make(),
+                GuardedDeleteAction::make('Apartemen tidak dapat dihapus karena masih memiliki riwayat reservasi.'),
             ])
             ->bulkActions([
                 Actions\BulkActionGroup::make([
-                    Actions\DeleteBulkAction::make(),
+                    Actions\DeleteBulkAction::make()
+                        ->authorizeIndividualRecords('delete'),
                 ]),
             ]);
     }
