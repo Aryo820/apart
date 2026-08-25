@@ -151,11 +151,37 @@ class ApartmentBookingTest extends TestCase
         $this->assertDatabaseCount('bookings', 0);
     }
 
-    public function test_maintenance_apartment_detail_page_returns_404(): void
+    /**
+     * Unit dalam pemeliharaan menampilkan halaman "tidak tersedia", bukan 404 —
+     * tautan yang sudah dibagikan harus menjelaskan keadaan. Yang tetap dijaga:
+     * tidak ada form booking, dan halamannya noindex.
+     */
+    public function test_maintenance_apartment_detail_page_shows_an_unavailable_state(): void
     {
         $apartment = $this->makeApartment(['status' => 'maintenance']);
 
-        $this->get('/apartments/'.$apartment->slug)->assertNotFound();
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('Unit tidak tersedia')
+            ->assertSee('dalam proses pemeliharaan')
+            ->assertSee('Lihat apartemen lain')
+            ->assertSee('noindex, follow', false)
+            // tidak boleh ada jalan memesan unit ini
+            ->assertDontSee('Booking Sekarang')
+            ->assertDontSee('bookingForm', false)
+            // jangan bocorkan detail internal
+            ->assertDontSee('maintenance', false);
+    }
+
+    public function test_available_apartment_detail_page_is_indexable_and_bookable(): void
+    {
+        $apartment = $this->makeApartment(['status' => 'available']);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('index, follow', false)
+            ->assertSee('bookingForm', false)
+            ->assertDontSee('Unit tidak tersedia');
     }
 
     public function test_availability_check_rejects_maintenance_apartment(): void
@@ -211,6 +237,50 @@ class ApartmentBookingTest extends TestCase
                 ->assertSee('/storage/apartments/main/unit.jpg', false)
                 ->assertDontSee('src="apartments/main/unit.jpg"', false);
         }
+    }
+
+    /**
+     * Unit tanpa foto tidak boleh menghasilkan src kosong: browser
+     * memperlakukan src="" sebagai permintaan ke URL halaman itu sendiri, jadi
+     * satu unit tanpa foto berarti satu request HTML ekstra per kartu.
+     */
+    public function test_apartment_without_a_photo_renders_the_placeholder(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment(['main_image' => '', 'images' => []]);
+        $booking = $this->makeBooking($apartment, $user);
+
+        foreach (['/apartments', '/apartments/'.$apartment->slug] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertSee(Apartment::PLACEHOLDER_IMAGE, false)
+                ->assertDontSee('src=""', false);
+        }
+
+        foreach (['/my-bookings', '/booking/'.$booking->booking_code] as $url) {
+            $this->actingAs($user)->get($url)
+                ->assertOk()
+                ->assertSee(Apartment::PLACEHOLDER_IMAGE, false)
+                ->assertDontSee('src=""', false);
+        }
+    }
+
+    /**
+     * URL foto unggahan dibangun dari disk 'public' — disk yang sama yang
+     * dipatok pada FileUpload Filament — bukan dari FILESYSTEM_DISK. Deploy
+     * dengan disk 'local' (nilai yang dulu ada di .env.example) menyimpan file
+     * ke storage/app/private yang tidak pernah dilayani lewat HTTP, sementara
+     * URL-nya tetap /storage/... — bentuk URL benar, filenya tidak ada di sana.
+     */
+    public function test_uploaded_image_urls_do_not_depend_on_the_default_disk(): void
+    {
+        config(['filesystems.default' => 'local']);
+
+        $apartment = $this->makeApartment(['main_image' => 'apartments/main/unit.jpg']);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('/storage/apartments/main/unit.jpg', false);
     }
 
     public function test_absolute_image_urls_are_left_untouched(): void

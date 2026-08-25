@@ -39,3 +39,61 @@ jobs:
 
       - name: Check code style (Pint)
         run: vendor/bin/pint --test
+
+  # Suite penuh di atas SQLite tidak pernah menyentuh perilaku row-lock
+  # (SQLite menulis secara serialisasi penuh), jadi jalur concurrency booking
+  # diverifikasi serius di sini — termasuk ApartmentLockSerializationTest.
+  test-mysql:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: apart_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mysqli
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Set up environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run tests against MySQL
+        env:
+          TEST_DB_DRIVER: mysql
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: '3306'
+          TEST_DB_DATABASE: apart_test
+          TEST_DB_USERNAME: root
+          TEST_DB_PASSWORD: root
+        run: php artisan test
+
+      - name: Check code style (Pint)
+        run: vendor/bin/pint --test

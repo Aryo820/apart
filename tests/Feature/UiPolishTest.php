@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\BookingStatus;
 use App\Models\Apartment;
 use App\Models\Booking;
+use App\Models\Facility;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -109,5 +110,123 @@ class UiPolishTest extends TestCase
             ->assertOk()
             ->assertSee('Lihat detail')
             ->assertDontSee('Invoice');
+    }
+
+    /**
+     * Grid fasilitas harus benar untuk jumlah apa pun. Layout lamanya memakai
+     * col-span yang dihitung dari indeks item (2/2/2 lalu 3/3), jadi hanya
+     * benar untuk tepat 5 fasilitas.
+     */
+    public function test_facility_grid_survives_any_number_of_facilities(): void
+    {
+        foreach ([1, 2, 3, 4, 5, 7] as $count) {
+            Facility::query()->delete();
+
+            for ($i = 1; $i <= $count; $i++) {
+                Facility::create(['name' => "Fasilitas {$i}", 'icon' => 'wifi', 'description' => 'Deskripsi']);
+            }
+
+            $response = $this->get('/')->assertOk();
+
+            // Semua yang diambil controller tampil (dibatasi 6 di grid).
+            foreach (range(1, min($count, 6)) as $i) {
+                $response->assertSee("Fasilitas {$i}");
+            }
+
+            // Tidak ada lagi kelas span yang bergantung pada jumlah item.
+            $response->assertDontSee('md:col-span-2', false)
+                ->assertDontSee('md:grid-cols-6', false);
+        }
+    }
+
+    /** CTA mobile memakai form booking yang sama, bukan form kedua. */
+    public function test_mobile_cta_reuses_the_existing_booking_form(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $apartment = $this->makeApartment();
+
+        $html = $this->actingAs($user)->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('mobile-cta-bar', false)
+            // asosiasi form native, bukan form kedua
+            ->assertSee('<button type="submit" form="bookingForm"', false)
+            // hook label yang ditukar script saat tanggal tidak tersedia
+            ->assertSee('data-mobile-cta-label', false)
+            ->getContent();
+
+        // Hanya SATU form yang menembak bookings.store — tidak ada logika ganda.
+        $this->assertSame(1, substr_count($html, 'action="'.route('bookings.store').'"'));
+    }
+
+    /** Tamu belum login tidak boleh melihat CTA "Booking" yang menyesatkan. */
+    public function test_mobile_cta_sends_guests_to_login_instead(): void
+    {
+        $apartment = $this->makeApartment();
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('mobile-cta-bar', false)
+            ->assertSee('Masuk untuk booking')
+            ->assertDontSee('<button type="submit" form="bookingForm"', false);
+    }
+
+    public function test_long_description_is_clamped_but_kept_whole_in_the_dom(): void
+    {
+        $long = str_repeat('Deskripsi unit yang sangat panjang sekali. ', 30);
+        $apartment = $this->makeApartment(['description' => $long]);
+
+        $this->get('/apartments/'.$apartment->slug)
+            ->assertOk()
+            ->assertSee('prose-clamp', false)
+            ->assertSee('Baca selengkapnya')
+            // teks lengkap tetap ada — dipotong tingginya, bukan isinya
+            ->assertSee('Deskripsi unit yang sangat panjang sekali.');
+
+        $short = $this->makeApartment(['description' => 'Deskripsi singkat.']);
+
+        $this->get('/apartments/'.$short->slug)
+            ->assertOk()
+            ->assertDontSee('prose-clamp', false)
+            ->assertDontSee('Baca selengkapnya');
+    }
+
+    public function test_listing_cards_surface_a_few_facilities_without_extra_queries(): void
+    {
+        $apartment = $this->makeApartment();
+        $facilities = collect(['WiFi', 'Kolam Renang', 'Gym', 'Parkir', 'Dapur'])
+            ->map(fn ($name) => Facility::create(['name' => $name, 'icon' => 'wifi']));
+        $apartment->facilities()->attach($facilities->pluck('id'));
+
+        $this->get('/apartments')
+            ->assertOk()
+            ->assertSee('WiFi')
+            ->assertSee('Kolam Renang')
+            ->assertSee('Gym')
+            // dibatasi 3 supaya kartu tetap ringkas
+            ->assertDontSee('Parkir')
+            ->assertSee('+2 lainnya');
+    }
+
+    /**
+     * Lantai ukuran teks pendukung adalah 0.75rem (token text-xs). Sebelumnya
+     * label form 0.58rem ≈ 9.3px dan metadata kartu 10–11px — huruf kapital
+     * dengan tracking lebar terbaca lebih kecil lagi daripada angkanya, dan
+     * justru itu yang memandu form pencarian.
+     */
+    public function test_supporting_text_never_drops_below_the_12px_floor(): void
+    {
+        $apartment = $this->makeApartment(['is_featured' => true]);
+        Facility::create(['name' => 'WiFi', 'icon' => 'wifi', 'description' => 'Internet cepat']);
+        $apartment->facilities()->attach(Facility::first()->id);
+
+        foreach (['/', '/apartments', '/apartments/'.$apartment->slug] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/text-\[(?:[0-9]|1[01])px\]|text-\[0\.[0-6]\d*rem\]/',
+                $html,
+                "Ada kelas teks di bawah 12px pada {$url}."
+            );
+        }
     }
 }

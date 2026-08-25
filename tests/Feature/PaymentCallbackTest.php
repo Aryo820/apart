@@ -189,7 +189,11 @@ class PaymentCallbackTest extends TestCase
         $this->assertSame(PaymentStatus::Pending, $booking->payment->fresh()->status);
     }
 
-    public function test_callback_expire_cancels_booking(): void
+    /**
+     * 'expire' dari Midtrans memetakan ke BookingStatus::Expired, bukan
+     * Cancelled: tamu tidak membatalkan apa pun, batas waktunya yang lewat.
+     */
+    public function test_callback_expire_marks_booking_expired(): void
     {
         $booking = $this->makePendingBooking();
 
@@ -197,6 +201,6 @@ class PaymentCallbackTest extends TestCase
             ->assertStatus(200);
 
         $this->assertSame(PaymentStatus::Expire, $booking->payment->fresh()->status);
-        $this->assertSame(BookingStatus::Cancelled, $booking->fresh()->status);
+        $this->assertSame(BookingStatus::Expired, $booking->fresh()->status);
     }
 }
