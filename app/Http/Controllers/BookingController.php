@@ -15,6 +15,7 @@ use App\Services\MidtransService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class BookingController extends Controller
 {
@@ -27,24 +28,40 @@ class BookingController extends Controller
 
     public function store(StoreBookingRequest $request)
     {
-        $apartment = Apartment::where('id', $request->apartment_id)
-            ->where('status', ApartmentStatus::Available)
-            ->firstOrFail();
-
-        $checkIn = Carbon::parse($request->check_in);
-        $checkOut = Carbon::parse($request->check_out);
-        $nights = max(1, $checkIn->diffInDays($checkOut));
-        $totalPrice = $nights * $apartment->price_per_night;
-
         $bookingCode = Booking::generateBookingCode();
 
-        // Lock existing bookings for this apartment so two concurrent
-        // requests can't both pass the availability check (double booking).
-        // Booking AND payment are created in the same transaction: if the
-        // payment gateway is unreachable the whole booking rolls back.
+        // Booking DAN payment dibuat dalam satu transaksi: kalau gateway tak
+        // terjangkau, seluruh booking ikut tergulung.
+        //
+        // Urutan kunci di project ini adalah Apartment -> Booking -> rentang
+        // rival -> Payment. Lock baris unit dipasang SEBELUM pemeriksaan
+        // konflik dan berlaku sampai commit, sehingga dua request yang
+        // bersaing pada unit yang sama pasti berbaris pada lock ini — bukan
+        // bergantung pada kebetulan gap-lock InnoDB saat hasil konflik kosong
+        // (kalender kosong = tidak ada baris yang bisa dikunci oleh query
+        // konflik). Unit lain tidak terpengaruh; serialisasinya per-unit.
         try {
-            $booking = DB::transaction(function () use ($apartment, $request, $checkIn, $checkOut, $nights, $totalPrice, $bookingCode) {
-                $conflict = Booking::conflicting($apartment->id, $request->check_in, $request->check_out)
+            $booking = DB::transaction(function () use ($request, $bookingCode) {
+                $apartment = Apartment::where('id', $request->integer('apartment_id'))
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $apartment || $apartment->status !== ApartmentStatus::Available) {
+                    abort(404);
+                }
+
+                $checkIn = Carbon::parse($request->check_in);
+                $checkOut = Carbon::parse($request->check_out);
+                $nights = Booking::nightsBetween($checkIn, $checkOut);
+                $totalPrice = Booking::priceFor($apartment, $nights);
+
+                // Gagal keras sebelum token diterbitkan bila tarif unit tidak
+                // memenuhi invariant Midtrans (rupiah bulat per malam) —
+                // alih-alih menagih tamu selisih lalu menolak settlement-nya
+                // selamanya. Lihat MidtransService::chargeAmount.
+                $chargeAmount = MidtransService::chargeAmount((float) $totalPrice, $nights);
+
+                $conflict = Booking::conflicting($apartment->id, $checkIn->toDateString(), $checkOut->toDateString())
                     ->lockForUpdate()
                     ->exists();
 
@@ -65,14 +82,23 @@ class BookingController extends Controller
                 ]);
 
                 try {
-                    $snapToken = $this->midtransService->getSnapToken($booking);
+                    // order_id dibuat di sini, bukan di dalam service, supaya
+                    // nilai yang dikirim ke Midtrans ikut tersimpan: itu satu-
+                    // satunya cara menanyakan status transaksi ini kembali saat
+                    // tamu balik dari Snap (PaymentController::reconcile).
+                    $orderId = Payment::generateOrderId($booking->booking_code);
+                    $snapToken = $this->midtransService->getSnapToken($booking, $orderId);
                 } catch (\Throwable $e) {
                     throw new PaymentGatewayException(previous: $e);
                 }
 
                 Payment::create([
                     'booking_id' => $booking->id,
-                    'gross_amount' => $totalPrice,
+                    'order_id' => $orderId,
+                    // Nominal yang DISIMPAN harus sama dengan yang DITAGIHKAN:
+                    // angka inilah pembanding PaymentStatusApplier untuk
+                    // notifikasi dari gateway.
+                    'gross_amount' => $chargeAmount,
                     'snap_token' => $snapToken,
                     'status' => PaymentStatus::Pending,
                 ]);
@@ -82,6 +108,8 @@ class BookingController extends Controller
         } catch (BookingConflictException $e) {
             return back()->withErrors(['check_in' => 'Apartemen ini tidak tersedia pada tanggal yang Anda pilih.'])->withInput();
         } catch (PaymentGatewayException $e) {
+            report($e);
+
             return back()->withErrors(['payment' => 'Gagal terhubung ke gerbang pembayaran. Silakan coba lagi.'])->withInput();
         }
 
@@ -110,31 +138,83 @@ class BookingController extends Controller
             abort(403);
         }
 
-        // Refresh or generate snap token if missing or expired (Midtrans
-        // tokens last ~24h). Gateway failures degrade gracefully: the
-        // booking detail page still renders, the user can retry later.
-        try {
-            if (! $booking->payment) {
-                $snapToken = $this->midtransService->getSnapToken($booking);
-                Payment::create([
-                    'booking_id' => $booking->id,
-                    'gross_amount' => $booking->total_price,
-                    'snap_token' => $snapToken,
-                    'status' => PaymentStatus::Pending,
-                ]);
-                $booking->load('payment');
-            } elseif (
-                $booking->payment->status === PaymentStatus::Pending
-                && $booking->payment->created_at->lt(now()->subDay())
-            ) {
-                $booking->payment->update([
-                    'snap_token' => $this->midtransService->getSnapToken($booking),
-                ]);
+        // Refresh or generate snap token if missing. Sejak MidtransService
+        // mengirim `expiry` yang sama dengan deadline kita, token tidak bisa
+        // lagi mati lebih dulu dari booking-nya — jadi pemeriksaan umur token
+        // 24 jam yang lama tidak diperlukan. Yang tersisa hanya kasus gateway
+        // sempat tidak terjangkau sehingga token belum pernah terbit.
+        // Gateway failures degrade gracefully: halaman tetap ter-render.
+        if ($booking->status === BookingStatus::Pending && ! $booking->isPaymentOverdue()) {
+            try {
+                if (! $booking->payment) {
+                    $orderId = Payment::generateOrderId($booking->booking_code);
+
+                    Payment::create([
+                        'booking_id' => $booking->id,
+                        'order_id' => $orderId,
+                        // Sumber nominal yang sama dengan store(): angka yang
+                        // disimpan harus sama dengan yang akan ditagihkan.
+                        'gross_amount' => MidtransService::chargeAmount((float) $booking->total_price, (int) $booking->total_nights),
+                        'snap_token' => $this->midtransService->getSnapToken($booking, $orderId),
+                        'status' => PaymentStatus::Pending,
+                    ]);
+                    $booking->load('payment');
+                } elseif (! $booking->payment->snap_token && $booking->payment->status === PaymentStatus::Pending) {
+                    // order_id ikut diperbarui: transaksi yang bisa ditanyakan
+                    // statusnya adalah yang tokennya baru diterbitkan ini.
+                    $orderId = Payment::generateOrderId($booking->booking_code);
+
+                    $booking->payment->update([
+                        'order_id' => $orderId,
+                        'snap_token' => $this->midtransService->getSnapToken($booking, $orderId),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                report($e);
             }
-        } catch (\Throwable $e) {
-            // Gateway unreachable — keep whatever token exists.
         }
 
         return view('bookings.show', compact('booking'));
+    }
+
+    /**
+     * Pembatalan oleh tamu. Hanya untuk booking yang belum dibayar — aturannya
+     * ada di Booking::isCancellableByGuest, dan diperiksa ULANG di dalam
+     * transaksi setelah lockForUpdate karena webhook Midtrans atau command
+     * bookings:expire-pending bisa mengubah status di antara pemuatan halaman
+     * dan penekanan tombol.
+     */
+    public function cancel(string $code)
+    {
+        $booking = Booking::with('payment')->where('booking_code', $code)->firstOrFail();
+
+        Gate::authorize('cancel', $booking);
+
+        $cancelled = DB::transaction(function () use ($booking) {
+            $fresh = Booking::with('payment')->whereKey($booking->id)->lockForUpdate()->first();
+
+            if (! $fresh || ! $fresh->isCancellableByGuest()) {
+                return false;
+            }
+
+            $fresh->update(['status' => BookingStatus::Cancelled]);
+
+            // Sesi pembayaran yang masih menganggur ikut ditutup supaya tidak
+            // ada jalan membayar reservasi yang sudah dibatalkan sendiri.
+            if ($fresh->payment && $fresh->payment->status === PaymentStatus::Pending) {
+                $fresh->payment->update(['status' => PaymentStatus::Cancel]);
+            }
+
+            return true;
+        });
+
+        if (! $cancelled) {
+            return back()->withErrors([
+                'cancel' => 'Reservasi ini sudah tidak bisa dibatalkan sendiri. Status-nya berubah sebelum permintaan Anda diproses.',
+            ]);
+        }
+
+        return redirect()->route('bookings.show', $booking->booking_code)
+            ->with('success', 'Reservasi dibatalkan. Tanggalnya sudah tersedia kembali untuk dipesan.');
     }
 }

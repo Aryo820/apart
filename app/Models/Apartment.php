@@ -14,6 +14,13 @@ class Apartment extends Model
 {
     use HasFactory;
 
+    /**
+     * Placeholder statis untuk unit tanpa foto. Aset biasa di public/, bukan
+     * lewat disk: ia harus tetap tampil justru ketika storage bermasalah.
+     * resources/js/app.js memakai path yang sama untuk file yang hilang.
+     */
+    public const PLACEHOLDER_IMAGE = 'images/unit-placeholder.svg';
+
     protected $fillable = [
         'title',
         'slug',
@@ -69,12 +76,37 @@ class Apartment extends Model
             return asset(ltrim($path, '/'));
         }
 
-        return Storage::url($path);
+        /*
+         * Disk 'public' dipatok di sini, bukan mengikuti FILESYSTEM_DISK:
+         * unggahannya juga dipatok ke disk yang sama (ApartmentResource), jadi
+         * penulis file dan pembuat URL tidak bisa lagi berbeda pendapat hanya
+         * karena satu variabel .env. Sebelumnya deploy dengan
+         * FILESYSTEM_DISK=local menyimpan foto ke storage/app/private
+         * sementara URL-nya tetap /storage/... — bentuk URL-nya benar, filenya
+         * tidak pernah ada di sana.
+         */
+        return Storage::disk('public')->url($path);
     }
 
     public function getMainImageUrlAttribute(): ?string
     {
         return static::resolveImageUrl($this->main_image);
+    }
+
+    /**
+     * URL yang selalu aman dipasang di atribut src. main_image_url tetap boleh
+     * null (hero beranda memakainya untuk memutuskan apakah ada foto yang layak
+     * jadi latar); src="" tidak boleh — browser memperlakukannya sebagai
+     * permintaan ke URL halaman itu sendiri, jadi satu unit tanpa foto berarti
+     * satu request HTML ekstra per kartu.
+     *
+     * File yang hilang dari disk tidak terdeteksi di sini (butuh stat per
+     * gambar, satu I/O per kartu); itu ditangani listener error di
+     * resources/js/app.js yang menukar src ke placeholder yang sama.
+     */
+    public function getDisplayImageUrlAttribute(): string
+    {
+        return $this->main_image_url ?? asset(self::PLACEHOLDER_IMAGE);
     }
 
     /** @return array<int, string> */

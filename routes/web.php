@@ -15,6 +15,11 @@ Route::post('/apartments/{id}/availability', [ApartmentController::class, 'check
     ->middleware('throttle:30,1')
     ->name('apartments.availability');
 
+// Halaman legal: isinya statis, jadi Route::view sudah cukup — tidak ada
+// controller yang perlu dibuat hanya untuk me-render dua Blade.
+Route::view('/syarat-ketentuan', 'legal.terms')->name('legal.terms');
+Route::view('/kebijakan-privasi', 'legal.privacy')->name('legal.privacy');
+
 // Guest Auth Routes — GET pages and POST actions throttled separately so
 // a login brute-force doesn't lock out registrations (and vice versa).
 Route::middleware('guest')->group(function () {
@@ -43,5 +48,19 @@ Route::post('/booking', [BookingController::class, 'store'])
     ->middleware(['auth', 'throttle:bookings'])
     ->name('bookings.store');
 
+// DELETE, bukan GET: ini mutasi status. Ikut limiter 'bookings' karena
+// membatalkan juga melepas tanggal ke kalender.
+Route::delete('/booking/{code}/cancel', [BookingController::class, 'cancel'])
+    ->middleware(['auth', 'throttle:bookings'])
+    ->name('bookings.cancel');
+
 // Midtrans Webhook (Exempt from CSRF in bootstrap/app.php)
 Route::post('/payment/midtrans-notification', [PaymentController::class, 'callback'])->name('payments.callback');
+
+// Rekonsiliasi status pembayaran saat tamu kembali dari Snap. POST karena
+// menulis status; nilainya sendiri diambil server-ke-server dari Midtrans, bukan
+// dari browser. Ikut limiter 'bookings' supaya tombolnya tidak bisa dipakai
+// memanggil API gateway berulang-ulang.
+Route::post('/booking/{code}/reconcile', [PaymentController::class, 'reconcile'])
+    ->middleware(['auth', 'throttle:bookings'])
+    ->name('bookings.reconcile');

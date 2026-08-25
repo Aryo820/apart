@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ApartmentStatus;
-use App\Enums\BookingStatus;
 use App\Models\Apartment;
 use App\Models\Booking;
 use App\Models\Facility;
@@ -84,12 +83,27 @@ class ApartmentController extends Controller
     {
         $apartment = Apartment::with('facilities')
             ->where('slug', $slug)
-            ->where('status', ApartmentStatus::Available)
             ->firstOrFail();
 
-        // Already booked dates
+        /*
+         * Unit yang sedang tidak dibuka tetap punya halamannya sendiri, bukan
+         * 404: tautan yang sudah dibagikan atau di-bookmark harus menjelaskan
+         * keadaannya, bukan tampak seperti halaman yang hilang. Statusnya tidak
+         * diubah di sini — hanya cara menampilkannya.
+         *
+         * Katalog dan beranda tetap memfilter status Available, jadi unit ini
+         * hanya bisa dicapai lewat tautan langsung.
+         */
+        if ($apartment->status !== ApartmentStatus::Available) {
+            return view('apartments.unavailable', compact('apartment'));
+        }
+
+        // Rentang yang benar-benar masih terkunci. Memakai scope yang sama
+        // dengan pengecekan konflik, jadi daftar yang dilihat tamu tidak bisa
+        // berbeda dari yang ditolak server — termasuk untuk booking pending
+        // yang batas waktu pembayarannya sudah lewat.
         $bookedDates = Booking::where('apartment_id', $apartment->id)
-            ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Pending->value])
+            ->blocking()
             ->get(['check_in', 'check_out'])
             ->map(function ($booking) {
                 return [

@@ -3,41 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
-use App\Enums\PaymentStatus;
 use App\Models\Booking;
-use App\Models\Payment;
+use App\Services\MidtransService;
+use App\Services\PaymentStatusApplier;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
+    public function __construct(
+        private PaymentStatusApplier $applier,
+        private MidtransService $midtransService,
+    ) {}
+
     /**
-     * Maps a Midtrans transaction_status onto our payment enum plus the
-     * resulting booking status. Keeps both in sync and guarantees we never
-     * write a value outside the payments.status enum.
-     *
-     * 'capture' is resolved separately (resolveStatus) because it depends
-     * on Midtrans' fraud_status: accept -> paid, challenge -> hold for
-     * manual review, deny -> failed.
+     * Webhook Midtrans. Tugasnya hanya membuktikan payload benar-benar dari
+     * Midtrans, lalu menyerahkan penerapan statusnya ke PaymentStatusApplier —
+     * penulis status yang sama dengan jalur rekonsiliasi di bawah.
      */
-    private const STATUS_MAP = [
-        'settlement' => ['payment' => PaymentStatus::Settlement, 'booking' => BookingStatus::Confirmed],
-        'pending' => ['payment' => PaymentStatus::Pending,    'booking' => BookingStatus::Pending],
-        'deny' => ['payment' => PaymentStatus::Failed,     'booking' => BookingStatus::Cancelled],
-        'failure' => ['payment' => PaymentStatus::Failed,     'booking' => BookingStatus::Cancelled],
-        'cancel' => ['payment' => PaymentStatus::Cancel,     'booking' => BookingStatus::Cancelled],
-        'expire' => ['payment' => PaymentStatus::Expire,     'booking' => BookingStatus::Cancelled],
-    ];
-
-    /** Payment statuses that must never transition again. */
-    private const FINAL_PAYMENT_STATUSES = [
-        PaymentStatus::Settlement,
-        PaymentStatus::Failed,
-        PaymentStatus::Cancel,
-        PaymentStatus::Expire,
-    ];
-
     public function callback(Request $request)
     {
         if (! $this->signatureIsValid($request)) {
@@ -48,74 +33,103 @@ class PaymentController extends Controller
         // contains dashes, so strip only the trailing timestamp segment.
         $bookingCode = Str::beforeLast((string) $request->order_id, '-');
 
-        $result = DB::transaction(function () use ($request, $bookingCode) {
-            $booking = Booking::with('payment')->where('booking_code', $bookingCode)->first();
-            if (! $booking || ! $booking->payment) {
-                return ['error' => 'not_found'];
-            }
+        $result = $this->applier->apply($bookingCode, $request->all());
 
-            // Lock the payment row so concurrent webhooks (Midtrans retries)
-            // serialize instead of racing each other (last-write-wins bug).
-            $payment = Payment::where('id', $booking->payment->id)->lockForUpdate()->first();
-            if (! $payment) {
-                return ['error' => 'not_found'];
-            }
-
-            // Idempotency: if the payment already reached a final state,
-            // don't process again. Prevents double-charging on webhook retries.
-            if (in_array($payment->status, self::FINAL_PAYMENT_STATUSES, true)) {
-                return ['error' => 'already_processed'];
-            }
-
-            $mapped = $this->resolveStatus($request);
-            if (! $mapped) {
-                return ['error' => 'unhandled'];
-            }
-
-            // Defense in depth: the signature proves the payload comes from
-            // Midtrans, but the nominal must still match what we expected.
-            if ((float) $request->gross_amount !== (float) $payment->gross_amount) {
-                return ['error' => 'amount_mismatch'];
-            }
-
-            $payment->update([
-                'status' => $mapped['payment'],
-                'transaction_id' => $request->transaction_id ?? $payment->transaction_id,
-                'payment_type' => $request->payment_type ?? $payment->payment_type ?? 'midtrans',
-                'raw_response' => $request->all(),
-            ]);
-            $booking->update(['status' => $mapped['booking']]);
-
-            return ['status' => 'success'];
-        });
-
-        return match ($result['error'] ?? null) {
+        return match ($result) {
             'not_found' => response()->json(['message' => 'Booking not found'], 404),
             'already_processed' => response()->json(['status' => 'already_processed']),
             'unhandled' => response()->json(['message' => 'Unhandled status'], 422),
             'amount_mismatch' => response()->json(['message' => 'Amount mismatch'], 422),
+            // 200: pembayarannya sudah tercatat, jadi Midtrans tidak perlu
+            // mengulang kirim. Tindak lanjutnya manual, bukan teknis.
+            'settled_but_unavailable' => response()->json(['status' => 'settled_but_unavailable']),
             default => response()->json(['status' => 'success']),
         };
     }
 
     /**
-     * Resolve the transaction status onto our status pair, handling the
-     * credit-card 'capture' status (which carries fraud_status) separately.
+     * Rekonsiliasi saat tamu kembali dari Snap.
+     *
+     * Masalah yang diselesaikan: status hanya pernah ditulis webhook, sementara
+     * webhook bisa tertunda, gagal terkirim, atau — di development — tidak bisa
+     * menjangkau localhost sama sekali. Tanpa jalur ini tamu yang baru saja
+     * membayar kembali ke halaman yang masih berbunyi "menunggu pembayaran",
+     * lengkap dengan tombol bayar yang mengundangnya membayar dua kali.
+     *
+     * Statusnya TIDAK dipercaya dari browser: yang dikirim tamu hanya "tolong
+     * periksa". Kebenarannya diambil server-ke-server dari Midtrans, lalu
+     * diterapkan oleh penerap status yang sama dengan webhook — dengan seluruh
+     * guard-nya (idempotensi, nominal, cek konflik sebelum Confirmed).
      */
-    private function resolveStatus(Request $request): ?array
+    public function reconcile(string $code)
     {
-        if ($request->transaction_status === 'capture') {
-            $fraudStatus = $request->fraud_status ?? 'accept';
+        $booking = Booking::with('payment')->where('booking_code', $code)->firstOrFail();
 
-            return match ($fraudStatus) {
-                'accept' => ['payment' => PaymentStatus::Settlement, 'booking' => BookingStatus::Confirmed],
-                'challenge' => ['payment' => PaymentStatus::Pending, 'booking' => BookingStatus::Pending],
-                'deny' => ['payment' => PaymentStatus::Failed, 'booking' => BookingStatus::Cancelled],
-                default => null,
-            };
+        if (Auth::id() !== $booking->user_id && ! Auth::user()?->isAdmin()) {
+            abort(403);
         }
 
-        return self::STATUS_MAP[$request->transaction_status] ?? null;
+        $orderId = $booking->payment?->order_id;
+
+        // Redirect ke route-nya, bukan back(): halaman reservasi bisa memicu
+        // rekonsiliasi ini otomatis saat tamu kembali dari Snap (?from=midtrans),
+        // dan back() akan mengembalikannya ke URL yang sama — berputar terus.
+
+        // Booking yang dibuat admin lewat Filament, atau payment dari sebelum
+        // kolom order_id ada: tidak ada transaksi yang bisa ditanyakan.
+        if (! $orderId) {
+            return redirect()->route('bookings.show', $booking->booking_code)
+                ->with('status', 'Belum ada sesi pembayaran yang bisa diperiksa untuk reservasi ini.');
+        }
+
+        try {
+            $payload = $this->midtransService->getTransactionStatus($orderId);
+        } catch (\Throwable $e) {
+            // Gateway tidak terjangkau atau transaksinya belum terdaftar di
+            // Midtrans (tamu menutup Snap sebelum memilih metode pembayaran).
+            // Webhook tetap menjadi jaring pengaman, jadi ini bukan kegagalan
+            // yang perlu ditampilkan sebagai error.
+            report($e);
+
+            return redirect()->route('bookings.show', $booking->booking_code)
+                ->with('status', 'Status pembayaran belum bisa diperiksa sekarang. Coba lagi beberapa saat lagi.');
+        }
+
+        $result = $this->applier->apply($booking->booking_code, $payload);
+        $fresh = $booking->fresh();
+
+        Log::info('Rekonsiliasi status pembayaran dari halaman reservasi.', [
+            'booking_code' => $booking->booking_code,
+            'order_id' => $orderId,
+            'midtrans_status' => $payload['transaction_status'] ?? null,
+            'result' => $result,
+            'booking_status' => $fresh?->status->value,
+        ]);
+
+        return redirect()
+            ->route('bookings.show', $booking->booking_code)
+            ->with($this->reconcileFlash($result, $fresh));
+    }
+
+    /**
+     * Pesan hasil rekonsiliasi. 'success' dibedakan menurut status booking
+     * SETELAH penerapan: hasil yang sama bisa berarti terkonfirmasi, masih
+     * menunggu (mis. VA belum dibayar), atau ditutup.
+     *
+     * @return array<string, string>
+     */
+    private function reconcileFlash(string $result, ?Booking $booking): array
+    {
+        if ($result === 'settled_but_unavailable') {
+            return ['status' => 'Pembayaran Anda tercatat, tetapi tanggalnya sudah dipesan tamu lain sebelum pembayaran ini sampai. Tim kami akan menindaklanjuti pengembalian dana.'];
+        }
+
+        return match ($booking?->status) {
+            BookingStatus::Confirmed => ['success' => 'Pembayaran Anda sudah diterima. Reservasi ini terkonfirmasi.'],
+            BookingStatus::Cancelled => ['status' => 'Menurut Midtrans pembayaran ini tidak berhasil, jadi reservasinya dibatalkan.'],
+            BookingStatus::Expired => ['status' => 'Batas waktu pembayaran reservasi ini sudah lewat.'],
+            default => ['status' => 'Belum ada pembayaran yang diterima Midtrans untuk reservasi ini. Selesaikan pembayaran sebelum batas waktunya.'],
+        };
     }
 
     /**
@@ -134,5 +148,4 @@ class PaymentController extends Controller
 
         return app()->isLocal() && Str::contains($serverKey, 'Demo');
     }
-
 }
