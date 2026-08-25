@@ -134,9 +134,15 @@
         transform: translateY(0);
     }
 
+    /*
+     * 0.75rem adalah lantai ukuran teks pendukung di situs ini (sama dengan
+     * text-xs). Eyebrow dan label form sebelumnya di bawahnya (0.68rem ≈ 10.9px
+     * dan 0.58rem ≈ 9.3px) — tracking lebar + huruf kapital membuat keduanya
+     * terbaca lebih kecil lagi daripada angkanya.
+     */
     .section-eyebrow {
         color: var(--color-ink-300);
-        font-size: 0.68rem;
+        font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.24em;
         line-height: 1.4;
@@ -227,10 +233,10 @@
 
     .search-field__label {
         color: var(--color-ink-300);
-        font-size: 0.58rem;
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.12em;
-        line-height: 1;
+        letter-spacing: 0.1em;
+        line-height: 1.2;
         text-transform: uppercase;
     }
 
@@ -240,7 +246,7 @@
         border: 0;
         background: transparent;
         color: white;
-        font-size: 0.78rem;
+        font-size: 0.8125rem;
         outline: none;
     }
 
@@ -257,6 +263,165 @@
         background: rgb(16 26 48 / 50%);
         padding: 3rem 1.5rem;
         text-align: center;
+    }
+
+    /*
+     * Dokumen legal punya banyak heading/paragraf/list berurutan. Distyle di
+     * sini supaya kedua Blade-nya berisi teks saja — tanpa mengulang utility
+     * yang sama di setiap elemen, dan tanpa menambah plugin typography.
+     */
+    .legal-prose {
+        color: var(--color-ink-200);
+        font-size: 0.875rem;
+        line-height: 1.75;
+    }
+
+    .legal-prose > h2 {
+        margin-top: 2.75rem;
+        color: white;
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+    }
+
+    .legal-prose > h2:first-child {
+        margin-top: 0;
+    }
+
+    .legal-prose p,
+    .legal-prose ul {
+        margin-top: 0.85rem;
+    }
+
+    .legal-prose ul {
+        list-style: disc;
+        padding-left: 1.35rem;
+    }
+
+    .legal-prose li + li {
+        margin-top: 0.4rem;
+    }
+
+    .legal-prose strong {
+        color: var(--color-ivory-100);
+        font-weight: 600;
+    }
+
+    .legal-prose a {
+        color: var(--color-gold-400);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    .legal-prose a:hover {
+        color: var(--color-gold-200);
+    }
+
+    /*
+     * Bar CTA yang menempel di bawah viewport mobile. Hanya di bawah lg —
+     * di desktop panel booking sudah sticky di sidebar, jadi bar ini
+     * disembunyikan supaya tidak ada dua CTA yang bersaing.
+     *
+     * env(safe-area-inset-bottom) menjaga tombol tidak tertutup home
+     * indicator iPhone; fallback 0px untuk browser tanpa dukungan env().
+     */
+    .mobile-cta-bar {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-top: 1px solid rgb(255 255 255 / 12%);
+        background: rgb(16 26 48 / 96%);
+        /* 1rem, bukan padding site-container: pada 320px setiap 8px menentukan
+           apakah harga masih utuh di samping tombol atau ikut terpotong. */
+        padding: 0.75rem 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        backdrop-filter: blur(12px);
+    }
+
+    @media (min-width: 1024px) {
+        .mobile-cta-bar {
+            display: none;
+        }
+    }
+
+    /*
+     * Menu mobile mengunci scroll body lewat .overflow-hidden (app.js). Saat itu
+     * bar CTA harus ikut hilang: panel menunya mengalir dari atas, jadi tanpa ini
+     * bar menutupi tautan terakhirnya.
+     */
+    body.overflow-hidden .mobile-cta-bar {
+        display: none;
+    }
+
+    /*
+     * Barnya fixed, jadi tanpa ruang tambahan ia menutupi ~76px terakhir
+     * dokumen — di apartments/show yang tertutup adalah baris pembayaran dan
+     * copyright di footer. :has() dipakai supaya hanya halaman yang benar-benar
+     * memasang bar yang kehilangan ruang itu; di lg barnya sudah hilang.
+     */
+    body:has(.mobile-cta-bar) {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    @media (min-width: 1024px) {
+        body:has(.mobile-cta-bar) {
+            padding-bottom: 0;
+        }
+    }
+
+    /*
+     * Deskripsi panjang dipotong secara visual, bukan dipotong isinya: teks
+     * lengkap tetap ada di DOM (jadi tetap terbaca screen reader dan mesin
+     * pencari), hanya tingginya yang dibatasi sampai <details> berikutnya
+     * dibuka. Pemotongan pakai line-clamp sehingga tidak pernah memutus kata.
+     */
+    .prose-clamp {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 10;
+    }
+
+    .prose-clamp:has(+ .prose-reveal[open]) {
+        display: block;
+        -webkit-line-clamp: unset;
+    }
+
+    .prose-reveal > summary {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--color-gold-400);
+        cursor: pointer;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        list-style: none;
+    }
+
+    .prose-reveal > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .prose-reveal > summary:hover {
+        color: var(--color-gold-200);
+    }
+
+    /*
+     * Label ditulis sebagai teks nyata di DOM (bukan content: '' dari CSS)
+     * supaya screen reader selalu membacakannya; yang ditukar CSS hanya mana
+     * dari keduanya yang tampil.
+     */
+    .prose-reveal:not([open]) .prose-reveal__less,
+    .prose-reveal[open] .prose-reveal__more {
+        display: none;
     }
 }
 
@@ -299,5 +464,44 @@
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
+    }
+}
+
+/*
+ * Halaman reservasi adalah satu-satunya bukti pemesanan yang bisa dibawa user
+ * (belum ada email konfirmasi), jadi harus terbaca saat dicetak atau disimpan
+ * sebagai PDF. Browser membuang latar gelap ketika mencetak, sementara teksnya
+ * tetap terang — tanpa blok ini hasil cetaknya nyaris kosong. Warna dipaksa
+ * gelap hanya di dalam .print-sheet supaya sisa situs tidak ikut terpengaruh.
+ */
+@media print {
+    @page {
+        margin: 1.5cm;
+    }
+
+    header,
+    footer,
+    .skip-link,
+    .mobile-cta-bar,
+    [data-no-print] {
+        display: none !important;
+    }
+
+    html,
+    body {
+        background: white !important;
+    }
+
+    .print-sheet,
+    .print-sheet * {
+        max-width: none !important;
+        border-color: #c5cad5 !important;
+        background: transparent !important;
+        color: #101a30 !important;
+        box-shadow: none !important;
+    }
+
+    .print-sheet {
+        border: 1px solid #c5cad5 !important;
     }
 }

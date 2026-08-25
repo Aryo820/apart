@@ -21,6 +21,7 @@ cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
 php artisan migrate --seed          # credentials dari .env (lihat bawah) atau random + di-print
+php artisan storage:link            # wajib: foto unit yang diunggah admin dilayani dari public/storage
 npm install && npm run build
 php artisan serve                   # http://localhost:8000
 ```
@@ -55,7 +56,8 @@ ADMIN_EMAIL / ADMIN_PASSWORD  # kredensial admin seed (jangan kosong di producti
 - Snap token dikirim ke browser; callback hasil bayar diterima Midtrans via `POST /payment/midtrans-notification` (exempt CSRF, dilindungi signature SHA-512).
 - `order_id` = `{booking_code}-{timestamp}`; `booking_code` dipisah dengan `Str::beforeLast`.
 - Status `capture` diperlakukan terpisah via `fraud_status` (accept/challenge/deny).
-- Idempotensi: payment dengan status final (`settlement/failed/cancel/expire`) tidak diproses ulang; row payment di-lock selama pemrosesan agar webhook ganda tidak balapan.
+- Idempotensi: payment dengan status `settlement` tidak pernah diproses ulang (uang sudah masuk). Status `failed/cancel/expire` hanya bisa dibuka kembali oleh notifikasi pembayaran **berhasil** — Snap mengizinkan retry pada `order_id` yang sama, jadi settlement setelah kartu ditolak itu nyata. Row payment di-lock selama pemrosesan agar webhook ganda tidak balapan.
+- Setiap transisi menuju `confirmed` melewati cek konflik terbaru (`Booking::conflicting` + `lockForUpdate`), termasuk saat booking masih `pending`: settlement yang datang terlambat tidak boleh mengonfirmasi di atas tamu lain yang sudah mengambil tanggalnya. Bila tanggalnya sudah diambil, pembayaran tetap dicatat dan kasusnya di-log untuk refund manual.
 - `gross_amount` webhook diverifikasi terhadap nilai payment.
 - Pembayaran pelanggan hanya diproses melalui Midtrans Snap dan callback terverifikasi; tidak ada endpoint simulasi pembayaran.
 

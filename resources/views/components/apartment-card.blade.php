@@ -9,7 +9,7 @@
 <article class="group min-w-0">
     <a href="{{ route('apartments.show', $apartment->slug) }}" class="relative block {{ $aspect }} overflow-hidden bg-ink-800">
         <img
-            src="{{ $apartment->main_image_url }}"
+            src="{{ $apartment->display_image_url }}"
             alt="{{ $apartment->title }}"
             width="720"
             height="900"
@@ -19,7 +19,7 @@
             decoding="async"
         >
         @if($apartment->is_featured)
-            <span class="absolute left-3 top-3 bg-gold-400 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-ink-950">
+            <span class="absolute left-3 top-3 bg-gold-400 px-2.5 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-ink-950">
                 Pilihan
             </span>
         @endif
@@ -27,7 +27,7 @@
     </a>
 
     <div class="pt-5">
-        <p class="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400">
+        <p class="truncate text-xs font-bold uppercase tracking-[0.16em] text-ink-400">
             {{ $apartment->city }} · {{ $apartment->address }}
         </p>
         <h3 class="mt-2 font-display text-xl font-semibold leading-snug text-white">
@@ -36,7 +36,7 @@
             </a>
         </h3>
 
-        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-ink-300">
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-300">
             <span>{{ $apartment->bedrooms }} kamar</span>
             <span aria-hidden="true">•</span>
             <span>{{ $apartment->bathrooms }} k. mandi</span>
@@ -46,12 +46,35 @@
             <span>{{ $apartment->area_sqm }} m²</span>
         </div>
 
+        {{-- Fasilitas dibatasi 3 supaya kartu tetap ringkas. Relasinya sudah
+             di-eager-load HomeController dan ApartmentController::index, jadi
+             tidak ada query tambahan per kartu. relationLoaded() menjaga kartu
+             tetap aman kalau nanti dipakai dari query tanpa with('facilities'). --}}
+        @if($apartment->relationLoaded('facilities') && $apartment->facilities->isNotEmpty())
+            @php $shown = $apartment->facilities->take(3); @endphp
+            <ul class="mt-3 flex flex-wrap items-center gap-1.5">
+                @foreach($shown as $facility)
+                    <li class="inline-flex items-center gap-1.5 border border-white/10 bg-white/5 px-2 py-1 text-xs text-ink-200">
+                        <span class="text-gold-400">
+                            <x-facility-icon :name="$facility->icon" class="h-3.5 w-3.5" />
+                        </span>
+                        {{ $facility->name }}
+                    </li>
+                @endforeach
+                @if($apartment->facilities->count() > $shown->count())
+                    <li class="px-1 text-xs text-ink-400">
+                        +{{ $apartment->facilities->count() - $shown->count() }} lainnya
+                    </li>
+                @endif
+            </ul>
+        @endif
+
         <div class="mt-4 flex items-end justify-between gap-4">
             <p class="text-sm font-semibold text-ivory-100">
                 IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
-                <span class="text-[10px] font-normal text-ink-400">/ malam</span>
+                <span class="text-xs font-normal text-ink-400">/ malam</span>
             </p>
-            <a href="{{ route('apartments.show', $apartment->slug) }}" class="inline-flex min-h-11 items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] text-gold-400 transition-colors hover:text-gold-200">
+            <a href="{{ route('apartments.show', $apartment->slug) }}" class="inline-flex min-h-11 items-center gap-1 text-xs font-bold uppercase tracking-[0.12em] text-gold-400 transition-colors hover:text-gold-200">
                 Detail
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m9 18 6-6-6-6" />

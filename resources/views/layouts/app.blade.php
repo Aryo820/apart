@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Santhosa — Apartemen Premium')</title>
     <meta name="description" content="@yield('meta_description', 'Temukan dan pesan apartemen premium di lokasi strategis dengan proses reservasi yang aman dan transparan.')">
+    {{-- Halaman yang isinya bukan penawaran aktif (mis. unit sedang ditutup)
+         menimpanya dengan noindex lewat @section('robots'). --}}
+    <meta name="robots" content="@yield('robots', 'index, follow')">
     <meta name="theme-color" content="#07101f">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +34,18 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 13l4 4L19 7" />
                 </svg>
                 <p>{{ session('success') }}</p>
+            </div>
+        @endif
+
+        @if(session('status'))
+            {{-- Kabar netral (mis. hasil rekonsiliasi yang belum berarti lunas):
+                 bukan sukses, bukan error. Tanpa blok ini flash 'status' hilang
+                 tanpa jejak. --}}
+            <div class="pointer-events-auto mb-3 flex items-start gap-3 border border-white/15 bg-ink-900/95 px-4 py-3 text-sm text-ink-200 shadow-2xl shadow-black/30 backdrop-blur">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 16v-4m0-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <p>{{ session('status') }}</p>
             </div>
         @endif
 

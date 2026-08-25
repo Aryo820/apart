@@ -25,14 +25,20 @@
         <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,10,20,.34)_0%,rgba(4,10,20,.42)_40%,rgba(4,10,20,.88)_100%)]"></div>
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(4,10,20,.16)_48%,rgba(4,10,20,.72)_100%)]"></div>
 
-        <div class="site-container relative z-10 flex min-h-[720px] flex-col items-center justify-center pb-12 pt-28 sm:min-h-[780px] sm:pb-16 sm:pt-36 lg:min-h-[calc(100svh-72px)]">
+        {{-- Tinggi hero mengikuti viewport (svh, jadi ikut menyusut saat toolbar
+             browser mobile muncul) alih-alih floor px yang besar. Padding mobile
+             ditahan kecil karena isi hero (judul + paragraf + form 3 baris ≈
+             500px) harus utuh di dalam 100svh-72px sebuah iPhone SE — dan karena
+             isinya di-center, padding itu tidak terlihat di layar yang lega.
+             Di sm/lg padding kembali lapang dan proporsinya tidak berubah. --}}
+        <div class="site-container relative z-10 flex min-h-[calc(100svh-72px)] flex-col items-center justify-center pb-4 pt-8 sm:min-h-[780px] sm:pb-16 sm:pt-36 lg:min-h-[calc(100svh-72px)]">
             <div class="mx-auto max-w-4xl text-center">
                 <p class="section-eyebrow text-white/70">Pilihan utama</p>
-                <h1 class="mt-5 font-display text-[2.7rem] font-semibold leading-[1.03] tracking-[-0.035em] text-white sm:text-6xl lg:text-[5rem]">
+                <h1 class="mt-4 font-display text-[2.25rem] font-semibold leading-[1.05] tracking-[-0.035em] text-white sm:mt-5 sm:text-6xl lg:text-[5rem]">
                     Hunian Berkelas,<br>
                     Kenyamanan Tanpa Batas
                 </h1>
-                <p class="mx-auto mt-6 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
+                <p class="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/75 sm:mt-6 sm:leading-7 sm:text-base">
                     Hunian premium terkurasi untuk perjalanan bisnis, rehat singkat, dan momen yang layak dikenang.
                 </p>
             </div>
@@ -40,11 +46,14 @@
             <form
                 action="{{ route('apartments.index') }}"
                 method="GET"
-                class="mt-14 w-full max-w-5xl border border-white/10 bg-[#15213a]/95 p-2.5 shadow-[0_24px_70px_rgba(0,0,0,.35)] backdrop-blur-md sm:mt-20"
+                class="mt-6 w-full max-w-5xl border border-white/10 bg-[#15213a]/95 p-2.5 shadow-[0_24px_70px_rgba(0,0,0,.35)] backdrop-blur-md sm:mt-20"
                 data-submit-loading
             >
-                <div class="grid gap-2 md:grid-cols-[1.25fr_1fr_1fr_auto]">
-                    <label class="search-field">
+                {{-- Mobile: 2 kolom, jadi kota + tamu berbagi satu baris dan
+                     form hanya 3 baris, bukan 4. Itu ~64px yang menentukan
+                     apakah tombol Cari terlihat tanpa scroll di layar 667px. --}}
+                <div class="grid grid-cols-2 gap-2 md:grid-cols-[1.25fr_1fr_1fr_auto]">
+                    <label class="search-field col-span-2 md:col-span-1">
                         <span class="search-field__label">Lokasi atau unit</span>
                         <span class="relative block">
                             <svg class="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -82,7 +91,7 @@
                         </select>
                     </label>
 
-                    <button type="submit" class="gold-button min-h-14 px-8 md:min-w-40" data-loading-label="Mencari...">
+                    <button type="submit" class="gold-button col-span-2 min-h-14 px-8 md:col-span-1 md:min-w-40" data-loading-label="Mencari...">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <circle cx="11" cy="11" r="7" stroke-width="2" />
                             <path stroke-linecap="round" stroke-width="2" d="m20 20-3.5-3.5" />
@@ -121,7 +130,7 @@
                 </div>
             @else
                 <div class="grid gap-x-6 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach($featuredApartments->take(3) as $apartment)
+                    @foreach($featuredApartments as $apartment)
                         <x-apartment-card :apartment="$apartment" :priority="$loop->first" />
                     @endforeach
                 </div>
@@ -146,14 +155,20 @@
                     <p class="mt-2 text-sm text-ink-300">Jelajahi katalog unit untuk melihat fasilitas yang tersedia di masing-masing unit.</p>
                 </div>
             @else
-                <div class="mt-12 grid border-l border-t border-white/10 md:grid-cols-6">
-                    @foreach($facilities->take(5) as $facility)
-                        <article class="border-b border-r border-white/10 px-6 py-10 text-center md:px-8 {{ $loop->index < 3 ? 'md:col-span-2' : 'md:col-span-3' }}">
-                            <div class="mx-auto flex h-12 w-12 items-center justify-center text-gold-400">
+                {{-- Flex-wrap, bukan grid: lebar kartu dihitung dari lebar baris
+                     (1 kolom → 2 → 3), sementara baris terakhir yang tidak penuh
+                     ikut ter-center alih-alih menggantung di kiri. Border dipasang
+                     per kartu, bukan dibagi antar sel, jadi tidak ada sel kosong
+                     atau garis terputus — berlaku untuk 1 sampai N fasilitas,
+                     apa pun yang diisi admin. --}}
+                <div class="mt-12 flex flex-wrap justify-center gap-4">
+                    @foreach($facilities as $facility)
+                        <article class="flex w-full flex-col items-center border border-white/10 bg-ink-950/40 px-6 py-9 text-center sm:w-[calc(50%-0.5rem)] md:px-8 lg:w-[calc(33.333%-0.667rem)]">
+                            <div class="flex h-12 w-12 items-center justify-center text-gold-400">
                                 <x-facility-icon :name="$facility->icon" class="h-7 w-7" />
                             </div>
-                            <h3 class="mt-5 text-base font-semibold text-white">{{ $facility->name }}</h3>
-                            <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-300">
+                            <h3 class="mt-4 text-base font-semibold text-white">{{ $facility->name }}</h3>
+                            <p class="mt-2 max-w-sm text-sm leading-6 text-ink-300">
                                 {{ $facility->description ?: 'Fasilitas tersedia untuk mendukung kenyamanan selama Anda menginap.' }}
                             </p>
                         </article>

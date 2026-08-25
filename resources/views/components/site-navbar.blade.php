@@ -20,7 +20,7 @@
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="flex min-h-11 items-center gap-2 text-xs font-semibold text-ink-300 transition-colors hover:text-white">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-ink-800 text-[11px] font-bold text-gold-300">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-ink-800 text-xs font-bold text-gold-300">
                             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </span>
                         Keluar

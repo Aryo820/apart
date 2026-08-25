@@ -30,10 +30,19 @@ return [
 
     'disks' => [
 
+        /*
+         * serve => false: default framework-nya mendaftarkan route
+         * GET /storage/{path} yang melayani file dari disk INI (storage/app/
+         * private). Aplikasi ini tidak memakai disk 'local' untuk apa pun yang
+         * publik — foto unit dipatok ke disk 'public' (Apartment::resolveImageUrl
+         * dan FileUpload di ApartmentResource). Dibiarkan aktif, route itu hanya
+         * membayangi symlink public/storage: foto unggahan yang filenya belum
+         * ada dijawab 403 oleh handler disk privat, bukan 404 biasa.
+         */
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

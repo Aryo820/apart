@@ -30,14 +30,14 @@
     <section class="bg-ink-950 py-20 sm:py-28">
         <div class="site-container">
             <div class="mx-auto max-w-xl border border-white/10 bg-ink-900 p-7 text-center sm:p-10">
-                <p class="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-gold-400">Error {{ $code }}</p>
+                <p class="font-mono text-xs font-bold uppercase tracking-[0.24em] text-gold-400">Error {{ $code }}</p>
                 <h1 class="mt-4 font-display text-3xl font-semibold tracking-[-0.025em] text-white sm:text-4xl">{{ $heading }}</h1>
                 <p class="mx-auto mt-4 max-w-md text-sm leading-6 text-ink-300">{{ $body }}</p>
 
                 <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                     <a href="{{ route('home') }}" class="gold-button w-full sm:w-auto">Kembali ke beranda</a>
                     <a href="{{ route('apartments.index') }}"
-                        class="inline-flex min-h-11 w-full items-center justify-center border border-white/15 px-5 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white sm:w-auto">
+                        class="inline-flex min-h-11 w-full items-center justify-center border border-white/15 px-5 text-xs font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white sm:w-auto">
                         Lihat katalog unit
                     </a>
                 </div>

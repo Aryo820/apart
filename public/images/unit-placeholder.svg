@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Foto unit belum tersedia">
+    <!--
+        Placeholder foto unit. Aset statis (bukan lewat disk storage) supaya
+        tetap tampil justru ketika storage yang bermasalah. Warnanya mengikuti
+        token ink-800/ink-600/gold-400 di resources/css/app.css.
+    -->
+    <rect width="800" height="600" fill="#182641" />
+    <g fill="none" stroke="#e4b82f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.55">
+        <path d="M250 400h300M290 400V250l110-70 110 70v150M350 400v-70h100v70" />
+        <path d="M330 285h20M450 285h20M330 330h20M450 330h20" />
+    </g>
+    <rect x="0" y="0" width="800" height="600" fill="none" stroke="#354566" stroke-width="4" />
+</svg>

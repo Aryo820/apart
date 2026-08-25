@@ -11,7 +11,7 @@
 @section('content')
     <section class="border-b border-white/10 bg-ink-900">
         <div class="site-container py-12 sm:py-14">
-            <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
+            <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
                 <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
                 <span aria-hidden="true">›</span>
                 <a href="{{ route('apartments.index') }}" class="transition-colors hover:text-gold-300">Katalog Unit</a>
@@ -36,7 +36,7 @@
     <section class="bg-ink-950 pt-8 sm:pt-10">
         <div class="site-container grid gap-2 md:grid-cols-3">
             <div class="relative h-[300px] overflow-hidden bg-ink-800 sm:h-[420px] md:col-span-2">
-                <img src="{{ $apartment->main_image_url }}" alt="{{ $apartment->title }}" class="h-full w-full object-cover" fetchpriority="high" decoding="async">
+                <img src="{{ $apartment->display_image_url }}" alt="{{ $apartment->title }}" class="h-full w-full object-cover" fetchpriority="high" decoding="async">
             </div>
 
             <div class="grid h-[180px] grid-cols-2 gap-2 sm:h-[420px] md:grid-cols-1">
@@ -44,20 +44,23 @@
                     <div class="relative overflow-hidden bg-ink-800">
                         <img src="{{ $img }}" alt="Foto {{ $apartment->title }} nomor {{ $index + 2 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
                         @if($loop->last && $extraPhotos > 0)
-                            <span class="absolute inset-x-0 bottom-0 bg-ink-950/85 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-ivory-100">
+                            <span class="absolute inset-x-0 bottom-0 bg-ink-950/85 px-3 py-2 text-center text-xs font-bold uppercase tracking-[0.14em] text-ivory-100">
                                 +{{ $extraPhotos }} foto lainnya
                             </span>
                         @endif
                     </div>
                 @empty
                     <div class="relative col-span-2 overflow-hidden bg-ink-800 md:col-span-1">
-                        <img src="{{ $apartment->main_image_url }}" alt="" class="h-full w-full object-cover opacity-40" loading="lazy" decoding="async">
+                        <img src="{{ $apartment->display_image_url }}" alt="" class="h-full w-full object-cover opacity-40" loading="lazy" decoding="async">
                     </div>
                 @endforelse
             </div>
         </div>
     </section>
-    <section class="bg-ink-950 py-12 sm:py-16">
+    {{-- Ruang untuk bar CTA mobile diberikan sekali di body (app.css), bukan
+         lewat padding besar di section ini — kalau di sini, footer-nya yang
+         tertutup. --}}
+    <section class="bg-ink-950 pb-16 pt-12 sm:pt-16">
         <div class="site-container grid gap-12 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-14">
             <div class="min-w-0 space-y-14">
                 <div>
@@ -73,7 +76,7 @@
                                 <svg class="h-5 w-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="{{ $spec['icon'] }}" />
                                 </svg>
-                                <p class="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">{{ $spec['label'] }}</p>
+                                <p class="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-ink-400">{{ $spec['label'] }}</p>
                                 <p class="mt-1 text-sm font-semibold text-white">{{ $spec['value'] }}</p>
                             </div>
                         @endforeach
@@ -82,9 +85,22 @@
 
                 <div>
                     <h2 class="section-eyebrow">Tentang unit ini</h2>
-                    <div class="mt-5 max-w-2xl text-sm leading-7 text-ink-200">
+                    {{-- Deskripsi panjang dibatasi tingginya, bukan dipotong
+                         isinya: teks lengkap tetap ada di DOM. Togglenya
+                         <details> native, jadi bisa dioperasikan keyboard tanpa
+                         JS. Ambang 700 karakter ≈ 10 baris pada kolom ini. --}}
+                    @php $descriptionIsLong = mb_strlen((string) $apartment->description) > 700; @endphp
+                    <div class="mt-5 max-w-2xl text-sm leading-7 text-ink-200 {{ $descriptionIsLong ? 'prose-clamp' : '' }}">
                         {!! nl2br(e($apartment->description)) !!}
                     </div>
+                    @if($descriptionIsLong)
+                        <details class="prose-reveal">
+                            <summary>
+                                <span class="prose-reveal__more">Baca selengkapnya</span>
+                                <span class="prose-reveal__less">Tutup deskripsi</span>
+                            </summary>
+                        </details>
+                    @endif
                 </div>
 
                 @if($apartment->facilities->isNotEmpty())
@@ -143,7 +159,7 @@
 
                         @if($bookedDates->isNotEmpty())
                             <details class="border border-white/6 bg-ink-950/70 px-3 py-2.5">
-                                <summary class="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400 transition-colors hover:text-gold-300">
+                                <summary class="cursor-pointer text-xs font-bold uppercase tracking-[0.14em] text-ink-400 transition-colors hover:text-gold-300">
                                     Tanggal tidak tersedia ({{ $bookedDates->count() }} periode)
                                 </summary>
                                 <ul class="mt-2.5 space-y-1 text-xs leading-5 text-ink-400">
@@ -180,7 +196,7 @@
                                 <span id="calcSubtotal">IDR 0</span>
                             </div>
                             <div class="flex items-baseline justify-between gap-4 border-t border-white/10 pt-3">
-                                <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-400">Total</span>
+                                <span class="text-xs font-bold uppercase tracking-[0.14em] text-ink-400">Total</span>
                                 <span id="calcTotalPrice" class="text-base font-semibold text-gold-400">IDR 0</span>
                             </div>
                         </div>
@@ -193,14 +209,19 @@
                             <button type="submit" id="submitBtn" class="gold-button w-full" data-loading-label="Memproses...">
                                 <span>Booking Sekarang</span>
                             </button>
-                            <p class="text-center text-[10px] font-bold uppercase tracking-[0.12em] text-ink-400">
+                            <p class="text-center text-xs font-bold uppercase tracking-[0.12em] text-ink-400">
                                 Belum ada penagihan pada langkah ini
                             </p>
+                            {{-- Penyebutan Midtrans dibatasi pada faktanya: gateway-nya
+                                 yang mengambil detail pembayaran di langkah berikutnya. --}}
+                            <p class="text-center text-xs leading-5 text-ink-400">
+                                Anda akan meninjau ringkasan reservasi lebih dulu, lalu membayar melalui Midtrans.
+                            </p>
                         @else
-                            <a href="{{ route('login') }}" class="flex min-h-11 w-full items-center justify-center border border-white/15 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-gold-400/50 hover:text-gold-300">
+                            <a href="{{ route('login') }}" class="flex min-h-11 w-full items-center justify-center border border-white/15 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-gold-400/50 hover:text-gold-300">
                                 Masuk untuk booking
                             </a>
-                            <p class="text-center text-[10px] leading-5 text-ink-400">
+                            <p class="text-center text-xs leading-5 text-ink-400">
                                 Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-gold-400 transition-colors hover:text-gold-200">Daftar dulu</a>
                             </p>
                         @endauth
@@ -209,6 +230,33 @@
             </div>
         </div>
     </section>
+
+    {{-- CTA mobile. Di bawah lg saja: panel booking di sidebar sticky hanya
+         bekerja di layar lebar, sementara di mobile ia jatuh di bawah seluruh
+         deskripsi dan daftar fasilitas.
+
+         form="bookingForm" adalah asosiasi form native — tombol ini men-submit
+         form yang SAMA, jadi tidak ada logika booking kedua. Kalau tanggal
+         belum diisi, validasi HTML bawaan yang menggeser fokus ke field yang
+         kosong, sehingga tombol ini juga berfungsi sebagai "bawa saya ke form".
+         Status disabled-nya ikut diatur pengecekan ketersediaan di bawah. --}}
+    <div class="mobile-cta-bar" data-no-print>
+        <div class="min-w-0">
+            <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-400">Mulai dari</p>
+            <p class="mt-0.5 truncate text-sm font-semibold text-ivory-100">
+                IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
+                <span class="text-xs font-normal text-ink-400">/ malam</span>
+            </p>
+        </div>
+
+        @auth
+            <button type="submit" form="bookingForm" class="gold-button shrink-0" data-loading-label="Memproses...">
+                <span data-mobile-cta-label>Booking</span>
+            </button>
+        @else
+            <a href="{{ route('login') }}" class="gold-button shrink-0">Masuk untuk booking</a>
+        @endauth
+    </div>
 
     @push('scripts')
         <script>
@@ -221,7 +269,15 @@
                 const calcSubtotal = document.getElementById('calcSubtotal');
                 const calcTotalPrice = document.getElementById('calcTotalPrice');
                 const message = document.getElementById('availabilityMessage');
-                const submitBtn = document.getElementById('submitBtn');
+                // Semua tombol submit milik form ini — termasuk yang di luar form
+                // lewat atribut form="bookingForm" (bar CTA mobile). Properti
+                // .form mengembalikan form pemilik untuk kedua cara asosiasi.
+                const submitButtons = Array.from(document.querySelectorAll('button[type="submit"]'))
+                    .filter((button) => button.form === form);
+                // Label tombol di bar CTA mobile. Pesan alasannya ada di dalam
+                // form, yang di mobile berada di luar layar saat bar terlihat —
+                // jadi tombol mati yang tetap berbunyi "Booking" menyesatkan.
+                const ctaLabel = document.querySelector('[data-mobile-cta-label]');
                 const pricePerNight = {{ $apartment->price_per_night }};
                 // Rentang terpesan (pending + confirmed) dari ApartmentController::show.
                 const bookedRanges = @json($bookedDates);
@@ -245,8 +301,14 @@
                     message.className = text ? TONES[tone] : 'hidden';
                 }
 
-                function setSubmitEnabled(enabled) {
-                    if (submitBtn) submitBtn.disabled = !enabled;
+                function setSubmitEnabled(enabled, disabledLabel = 'Tidak tersedia') {
+                    submitButtons.forEach((button) => {
+                        button.disabled = !enabled;
+                    });
+
+                    if (ctaLabel) {
+                        ctaLabel.textContent = enabled ? 'Booking' : disabledLabel;
+                    }
                 }
 
                 function calculate() {
@@ -289,7 +351,7 @@
                     }
 
                     setMessage('Memeriksa ketersediaan...', 'busy');
-                    setSubmitEnabled(false);
+                    setSubmitEnabled(false, 'Memeriksa...');
 
                     try {
                         const response = await fetch(availabilityUrl, {

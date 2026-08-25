@@ -25,17 +25,17 @@
         {{-- Numbers (hidden on the narrowest screens; prev/next stay usable) --}}
         @foreach ($elements as $element)
             @if (is_string($element))
-                <span aria-hidden="true" class="hidden h-11 w-11 items-center justify-center text-xs text-ink-400 sm:inline-flex">{{ $element }}</span>
+                <span aria-hidden="true" class="hidden h-11 w-11 items-center justify-center text-sm text-ink-400 sm:inline-flex">{{ $element }}</span>
             @endif
 
             @if (is_array($element))
                 @foreach ($element as $page => $url)
                     @if ($page == $paginator->currentPage())
                         <span aria-current="page"
-                            class="hidden h-11 w-11 items-center justify-center bg-gold-400 text-xs font-extrabold text-ink-950 sm:inline-flex">{{ $page }}</span>
+                            class="hidden h-11 w-11 items-center justify-center bg-gold-400 text-sm font-extrabold text-ink-950 sm:inline-flex">{{ $page }}</span>
                     @else
                         <a href="{{ $url }}" aria-label="{{ __('Go to page :page', ['page' => $page]) }}"
-                            class="hidden h-11 w-11 items-center justify-center border border-white/15 text-xs font-bold text-ink-200 transition-colors hover:border-gold-400/60 hover:text-gold-300 sm:inline-flex">{{ $page }}</a>
+                            class="hidden h-11 w-11 items-center justify-center border border-white/15 text-sm font-bold text-ink-200 transition-colors hover:border-gold-400/60 hover:text-gold-300 sm:inline-flex">{{ $page }}</a>
                     @endif
                 @endforeach
             @endif

@@ -1,4 +1,40 @@
+/*
+ * Foto unit yang filenya hilang dari disk (atau URL remote dari seeder yang
+ * tidak terjangkau saat offline) tidak boleh meninggalkan ikon rusak. src yang
+ * kosong sudah dicegah di server oleh Apartment::display_image_url — blok ini
+ * menangani kasus yang tidak bisa dideteksi tanpa stat per gambar.
+ *
+ * Path harus sama dengan Apartment::PLACEHOLDER_IMAGE.
+ */
+const IMAGE_FALLBACK = '/images/unit-placeholder.svg';
+
+function applyImageFallback(image) {
+    if (!(image instanceof HTMLImageElement) || image.dataset.fallbackApplied) {
+        return;
+    }
+
+    // Ditandai supaya placeholder yang ikut gagal tidak memicu loop.
+    image.dataset.fallbackApplied = 'true';
+    image.src = IMAGE_FALLBACK;
+}
+
+/*
+ * Didaftarkan di top level, bukan di dalam DOMContentLoaded: gambar mulai
+ * dimuat saat HTML masih diparse, jadi listener yang dipasang belakangan bisa
+ * melewatkan error yang sudah terjadi. Fase capture wajib — event 'error' pada
+ * <img> tidak bubble ke document.
+ */
+document.addEventListener('error', (event) => applyImageFallback(event.target), true);
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Jaring pengaman untuk gambar yang errornya terjadi sebelum script ini
+    // dieksekusi: selesai dimuat tapi tanpa dimensi = gagal.
+    document.querySelectorAll('img').forEach((image) => {
+        if (image.complete && image.naturalWidth === 0) {
+            applyImageFallback(image);
+        }
+    });
+
     const menuToggle = document.querySelector('[data-mobile-menu-toggle]');
     const mobileMenu = document.querySelector('[data-mobile-menu]');
 
@@ -34,21 +70,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('form[data-submit-loading]').forEach((form) => {
         form.addEventListener('submit', () => {
-            const submitButton = form.querySelector('button[type="submit"]');
+            // Tombol submit bisa berada di luar form lewat atribut
+            // form="<id>" (bar CTA mobile di halaman unit). Properti .form
+            // mengembalikan form pemilik untuk kedua cara asosiasi, jadi
+            // semuanya ikut masuk state loading — bukan hanya yang di dalam.
+            const submitButtons = Array.from(document.querySelectorAll('button[type="submit"]'))
+                .filter((button) => button.form === form && !button.disabled);
 
-            if (!submitButton || submitButton.disabled) {
-                return;
-            }
+            submitButtons.forEach((submitButton) => {
+                submitButton.disabled = true;
+                submitButton.setAttribute('aria-busy', 'true');
 
-            submitButton.disabled = true;
-            submitButton.setAttribute('aria-busy', 'true');
+                const label = submitButton.querySelector('span');
+                const loadingLabel = submitButton.dataset.loadingLabel;
 
-            const label = submitButton.querySelector('span');
-            const loadingLabel = submitButton.dataset.loadingLabel;
-
-            if (label && loadingLabel) {
-                label.textContent = loadingLabel;
-            }
+                if (label && loadingLabel) {
+                    label.textContent = loadingLabel;
+                }
+            });
         });
     });
 });

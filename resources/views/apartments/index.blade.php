@@ -11,7 +11,7 @@
 @section('content')
     <section class="border-b border-white/10 bg-ink-900">
         <div class="site-container py-14 sm:py-16">
-            <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
+            <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
                 <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
                 <span aria-hidden="true">›</span>
                 <span class="text-ink-200" aria-current="page">Katalog Unit</span>
@@ -35,7 +35,7 @@
                 <summary class="flex min-h-12 cursor-pointer items-center justify-between px-4 text-xs font-bold uppercase tracking-[0.16em] text-ivory-100 lg:hidden">
                     Filter &amp; Urutkan
                     @if($activeFilters->isNotEmpty())
-                        <span class="ml-2 bg-gold-400 px-2 py-0.5 text-[10px] font-extrabold text-ink-950">{{ $activeFilters->count() }}</span>
+                        <span class="ml-2 bg-gold-400 px-2 py-0.5 text-xs font-extrabold text-ink-950">{{ $activeFilters->count() }}</span>
                     @endif
                 </summary>
 
@@ -99,7 +99,7 @@
                             <span>Terapkan filter</span>
                         </button>
                         @if($activeFilters->isNotEmpty() || request('sort'))
-                            <a href="{{ route('apartments.index') }}" class="inline-flex min-h-11 items-center justify-center border border-white/15 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white">
+                            <a href="{{ route('apartments.index') }}" class="inline-flex min-h-11 items-center justify-center border border-white/15 text-xs font-bold uppercase tracking-[0.1em] text-ink-200 transition-colors hover:border-gold-400/50 hover:text-white">
                                 Reset filter
                             </a>
                         @endif
@@ -130,11 +130,11 @@
                     </div>
                 @else
                     <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-white/10 pb-5">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-400">
                             Menampilkan {{ $apartments->firstItem() }}–{{ $apartments->lastItem() }} dari {{ $apartments->total() }} unit
                         </p>
                         @if($activeFilters->isNotEmpty())
-                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-gold-400">
+                            <p class="text-xs font-bold uppercase tracking-[0.14em] text-gold-400">
                                 {{ $activeFilters->count() }} filter aktif
                             </p>
                         @endif
