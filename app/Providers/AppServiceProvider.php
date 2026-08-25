@@ -40,6 +40,17 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
         });
 
+        /*
+         * Halaman reservasi menerima kode booking bebas, dan otorisasi barunya
+         * berjalan SETELAH pencarian. Tanpa limit, pengguna terautentikasi bisa
+         * mengenumerasi kode dengan laju penuh tanpa jejak. Bucket dipisah dari
+         * limiter tulis 'bookings' supaya membuka halaman sendiri tidak pernah
+         * menggerus jatah membuat/membatalkan reservasi.
+         */
+        RateLimiter::for('booking-view', function ($request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Panel resources are admin-only at the Gate level (defense-in-depth
         // on top of FilamentUser::canAccessPanel).
         Gate::policy(Apartment::class, ApartmentPolicy::class);

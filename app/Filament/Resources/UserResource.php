@@ -8,8 +8,10 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
@@ -108,5 +110,48 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Pemeriksaan yang harus dilewati SETIAP mutasi role akun dari panel.
+     *
+     * Menurunkan role akun sendiri adalah satu-satunya jalur nyata menuju
+     * panel tanpa admin: setiap aktor lain yang sampai ke titik ini pasti
+     * admin, jadi menurunkan admin kedua selalu menyisakan satu admin.
+     *
+     * Statik dan murni seperti guardBookingIntegrity: bisa dipanggil dari hook
+     * Filament DAN langsung dari test tanpa memuat halaman Livewire.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws Halt mutasi ditolak dan transaksi di-rollback
+     */
+    public static function guardAccountIntegrity(array $data, User $record, ?User $actor): array
+    {
+        if ($actor === null || ! $record->is($actor) || ! array_key_exists('role', $data)) {
+            return $data;
+        }
+
+        $targetRole = UserRole::tryFrom((string) $data['role']);
+
+        if (! $targetRole || $targetRole === $record->role) {
+            return $data;
+        }
+
+        static::rejectMutation('Anda tidak dapat mengubah role akun Anda sendiri.');
+
+        return $data;
+    }
+
+    private static function rejectMutation(string $message): never
+    {
+        Notification::make()
+            ->danger()
+            ->title('Perubahan ditolak')
+            ->body($message)
+            ->persistent()
+            ->send();
+
+        throw (new Halt)->rollBackDatabaseTransaction();
     }
 }

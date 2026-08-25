@@ -94,6 +94,46 @@ class PaymentCallbackTest extends TestCase
         $this->assertSame(PaymentStatus::Pending, $booking->payment->fresh()->status);
     }
 
+    /**
+     * Bypass lama menerima payload tanpa tanda tangan di environment local
+     * selama server key mengandung 'Demo'. Konfirmasi pembayaran tidak boleh
+     * punya jalur tanpa tanda tangan di environment mana pun.
+     */
+    public function test_callback_rejects_invalid_signature_even_locally_with_demo_key(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+        config(['midtrans.server_key' => 'SB-Midtrans-Demo-server-key']);
+
+        $booking = $this->makePendingBooking();
+        $data = $this->payload($booking, 'settlement');
+        $data['signature_key'] = str_repeat('0', 128);
+
+        $this->postJson('/payment/midtrans-notification', $data)
+            ->assertStatus(403);
+
+        $this->assertSame(PaymentStatus::Pending, $booking->payment->fresh()->status);
+        $this->assertSame(BookingStatus::Pending, $booking->fresh()->status);
+    }
+
+    /**
+     * Input non-skalar (mis. ?order_id[]=x) harus ditolak 403 sebelum nilai
+     * dipakai — bukan meledak sebagai TypeError/500.
+     */
+    public function test_callback_rejects_array_typed_input_without_error(): void
+    {
+        $booking = $this->makePendingBooking();
+
+        $this->postJson('/payment/midtrans-notification', [
+            'order_id' => [$booking->booking_code.'-1700000000'],
+            'status_code' => ['200'],
+            'gross_amount' => ['1000000.00'],
+            'signature_key' => str_repeat('0', 128),
+            'transaction_status' => 'settlement',
+        ])->assertStatus(403);
+
+        $this->assertSame(PaymentStatus::Pending, $booking->payment->fresh()->status);
+    }
+
     public function test_callback_settlement_confirms_booking(): void
     {
         $booking = $this->makePendingBooking();

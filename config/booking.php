@@ -17,4 +17,14 @@ return [
      *   - bookings:expire-pending     (command penutup status)
      */
     'payment_expiry_minutes' => (int) env('BOOKING_PAYMENT_EXPIRY_MINUTES', 1440),
+
+    /*
+     * Jumlah maksimum reservasi Pending yang MASIH memegang kalender
+     * (memakai definisi yang sama dengan Booking::scopeBlocking) per akun
+     * tamu. Tanpa batas ini, pendaftaran terbuka + hold 24 jam bisa dipakai
+     * menutup inventaris: buat banyak akun, pegang semua tanggal, tamu sah
+     * kehabisan unit. Jalur admin Filament sengaja tidak dibatasi — cap ini
+     * anti-penyalahgunaan jalur publik, bukan aturan domain.
+     */
+    'max_pending_per_user' => (int) env('BOOKING_MAX_PENDING_PER_USER', 3),
 ];

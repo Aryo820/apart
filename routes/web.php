@@ -39,7 +39,13 @@ Route::middleware(['guest', 'throttle:5,1'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/my-bookings', [BookingController::class, 'index'])->name('bookings.index');
-    Route::get('/booking/{code}', [BookingController::class, 'show'])->name('bookings.show');
+
+    // Limiter terpisah dari 'bookings': lookup kode harus tetap mahal bagi
+    // yang mengenumerasi, tapi murah bagi pemiliknya yang sekadar memuat
+    // ulang halaman pembayarannya.
+    Route::get('/booking/{code}', [BookingController::class, 'show'])
+        ->middleware('throttle:booking-view')
+        ->name('bookings.show');
 });
 
 // Booking writes are throttled because pending reservations block calendar

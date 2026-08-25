@@ -7,10 +7,12 @@ use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
 use App\Exceptions\BookingConflictException;
 use App\Exceptions\PaymentGatewayException;
+use App\Exceptions\PendingHoldLimitException;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Apartment;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\MidtransService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -69,6 +71,24 @@ class BookingController extends Controller
                     throw new BookingConflictException;
                 }
 
+                /*
+                 * Batas hold aktif per akun. Baris PENGGUNA ikut dikunci
+                 * supaya dua request paralel untuk dua unit berbeda berbaris
+                 * pada pemeriksaan cap yang sama — kalau tidak, keduanya bisa
+                 * lolos hitungan secara bersamaan. Urutan kunci tetap
+                 * Apartment -> Booking -> Payment; tidak ada penulis lain yang
+                 * mengunci baris user, jadi urutan ini aman dari deadlock.
+                 */
+                User::whereKey(Auth::id())->lockForUpdate()->first();
+
+                $activeHolds = Booking::where('user_id', Auth::id())
+                    ->blocking()
+                    ->count();
+
+                if ($activeHolds >= max(1, (int) config('booking.max_pending_per_user'))) {
+                    throw new PendingHoldLimitException;
+                }
+
                 $booking = Booking::create([
                     'booking_code' => $bookingCode,
                     'user_id' => Auth::id(),
@@ -107,6 +127,13 @@ class BookingController extends Controller
             });
         } catch (BookingConflictException $e) {
             return back()->withErrors(['check_in' => 'Apartemen ini tidak tersedia pada tanggal yang Anda pilih.'])->withInput();
+        } catch (PendingHoldLimitException $e) {
+            return back()->withErrors([
+                'check_in' => sprintf(
+                    'Anda sudah memiliki %d reservasi yang masih menunggu pembayaran. Selesaikan pembayaran atau biarkan kedaluwarsa sebelum membuat reservasi baru.',
+                    max(1, (int) config('booking.max_pending_per_user')),
+                ),
+            ])->withInput();
         } catch (PaymentGatewayException $e) {
             report($e);
 

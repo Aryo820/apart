@@ -25,7 +25,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request)
     {
-        if (! $this->signatureIsValid($request)) {
+        if (! $this->signatureInputsAreScalar($request) || ! $this->signatureIsValid($request)) {
             return response()->json(['message' => 'Invalid signature'], 403);
         }
 
@@ -133,19 +133,29 @@ class PaymentController extends Controller
     }
 
     /**
-     * Verify Midtrans' SHA-512 signature. Only bypassed in local dev when
-     * the configured server key is still the demo placeholder — a real key
-     * (including in local) is always verified.
+     * Verify Midtrans' SHA-512 signature. Tidak ada bypass: payload webhook
+     * yang tidak bertanda tangan valid selalu ditolak, di semua environment —
+     * key demo pun tidak boleh membuka jalur konfirmasi pembayaran tanpa
+     * tanda tangan.
      */
     private function signatureIsValid(Request $request): bool
     {
         $serverKey = (string) config('midtrans.server_key');
         $expected = hash('sha512', $request->order_id.$request->status_code.$request->gross_amount.$serverKey);
 
-        if (hash_equals($expected, (string) $request->signature_key)) {
-            return true;
-        }
+        return hash_equals($expected, (string) $request->signature_key);
+    }
 
-        return app()->isLocal() && Str::contains($serverKey, 'Demo');
+    /**
+     * Input non-skalar (mis. ?order_id[]=x) harus ditolak sebelum dihitung
+     * atau dipakai: menggabungkannya ke string melempar TypeError yang
+     * berujung 500, bukan penolakan bersih.
+     */
+    private function signatureInputsAreScalar(Request $request): bool
+    {
+        return is_string($request->order_id)
+            && is_string($request->status_code)
+            && is_string($request->gross_amount)
+            && is_string($request->signature_key);
     }
 }

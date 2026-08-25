@@ -22,6 +22,10 @@ class BookingThrottleTest extends TestCase
         $this->mock(MidtransService::class, function (MockInterface $mock) {
             $mock->shouldReceive('getSnapToken')->andReturn('SNAP-TEST-TOKEN')->byDefault();
         });
+
+        // Test ini menguji limiter tulis, bukan cap hold: naikkan cap agar
+        // kedua proteksi bisa diuji secara terpisah.
+        config(['booking.max_pending_per_user' => 20]);
     }
 
     private function makeApartment(): Apartment

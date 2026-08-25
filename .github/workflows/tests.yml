@@ -28,6 +28,11 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      # Gagal CI bila ada CVE di dependency lock — jangan biarkan dependensi
+      # rentan lolos hanya karena suite fungsional tetap hijau.
+      - name: Audit Composer dependencies
+        run: composer audit --locked
+
       - name: Set up environment
         run: |
           cp .env.example .env

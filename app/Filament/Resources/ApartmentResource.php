@@ -123,6 +123,15 @@ class ApartmentResource extends Resource
                         // pernah dilayani lewat HTTP.
                         Forms\Components\FileUpload::make('main_image')
                             ->image()
+                            /*
+                             * image() sendiri membuka image/* termasuk SVG;
+                             * browser mengeksekusi <script> di dalam SVG yang
+                             * dibuka langsung dari /storage/... — XSS tersimpan
+                             * di origin aplikasi. Allowlist eksplisit menolak
+                             * SVG dan membatasi berat tiap berkas.
+                             */
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->maxSize(2048)
                             ->disk('public')
                             ->directory('apartments/main')
                             ->dehydrated(fn (mixed $state): bool => filled($state))
@@ -130,6 +139,8 @@ class ApartmentResource extends Resource
 
                         Forms\Components\FileUpload::make('images')
                             ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->maxSize(2048)
                             ->multiple()
                             ->disk('public')
                             ->directory('apartments/gallery')

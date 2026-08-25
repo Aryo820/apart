@@ -65,7 +65,7 @@ ADMIN_EMAIL / ADMIN_PASSWORD  # kredensial admin seed (jangan kosong di producti
 `app/Enums/BookingStatus.php` dan `app/Enums/PaymentStatus.php` — satu sumber kebenaran status, dipakai di controller, model, view, dan panel Filament. Jangan pakai string mentah di kode baru.
 
 ### Pembersihan booking menggantung
-`routes/console.php` menjadwalkan job tiap jam: booking `pending` berumur > 24 jam → `cancelled`. Jalankan scheduler di production:
+`routes/console.php` menjadwalkan command `bookings:expire-pending` tiap 5 menit: booking `pending` yang melewati batas waktu pembayaran (`BOOKING_PAYMENT_EXPIRY_MINUTES`) → `expired`. Tanggalnya sendiri sudah bebas lebih dulu via `Booking::scopeBlocking`, jadi keterlambatan scheduler tidak pernah mengunci kalender. Jalankan scheduler di production:
 
 ```bash
 * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
@@ -96,11 +96,25 @@ GitHub Actions di `.github/workflows/tests.yml`: composer install → migrate sq
 
 - Semua query parameterized (ORM); output Blade ter-escape; `{!! !!}` hanya dipakai bersama `e()`.
 - Password bcrypt (12 rounds); session di-regenerate saat login/logout.
-- Rate limit: login `10/menit/IP`, register `5/menit/IP`, booking `10/menit`, cek availability `30/menit` — per-bucket terpisah.
-- Panel admin: hanya role `admin` via `FilamentUser::canAccessPanel()` **plus** Policy admin-only per resource (defense-in-depth di level Gate).
+- Rate limit: login `10/menit/IP`, register `5/menit/IP`, booking `10/menit`, cek availability `30/menit`, buka halaman reservasi `60/menit` — per-bucket terpisah. IP klien diresolusi lewat `TRUSTED_PROXIES`.
+- Cap reservasi Pending aktif per akun tamu (`BOOKING_MAX_PENDING_PER_USER`) mencegah inventory-squatting.
+- Panel admin: hanya role `admin` via `FilamentUser::canAccessPanel()` **plus** Policy admin-only per resource (defense-in-depth di level Gate); strict mode menolak ability yang belum diputuskan.
+- Admin tidak bisa menghapus/demote dirinya sendiri (policy + guard form) — panel tak pernah terlanjur tanpa admin.
+- Upload gambar unit dibatasi PNG/JPEG/WebP maksimal 2 MB — SVG (vektor stored XSS) ditolak server-side.
 - Security headers (nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy, HSTS di production) via middleware global.
-- Webhook Midtrans CSRF-exempt tapi wajib signature valid.
+- Webhook Midtrans CSRF-exempt tapi wajib signature SHA-512 valid — tanpa pengecualian environment apa pun; input non-skalar ditolak 403.
 - Frontend publik memakai Tailwind CSS ter-compile (Vite build), bukan CDN runtime.
+
+## Checklist deployment
+
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://...`
+- [ ] `SESSION_SECURE_COOKIE=true`; HTTPS dipaksa (redirect di proxy/CDN)
+- [ ] `TRUSTED_PROXIES=` CIDR proxy/LB yang sebenarnya (bukan `*`)
+- [ ] `MIDTRANS_IS_PRODUCTION=true` + server key production
+- [ ] Kredensial seed (`ADMIN_EMAIL`/`ADMIN_PASSWORD`) eksplisit, bukan default
+- [ ] Cron `schedule:run` per menit terpasang (expiry booking)
+- [ ] `composer audit --locked` hijau (juga digate otomatis di CI)
+- [ ] Verifikasi webhook Midtrans dapat menjangkau `/payment/midtrans-notification` dari internet
 
 ## Batasan yang disengaja
 

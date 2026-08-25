@@ -212,14 +212,14 @@ class Booking extends Model
     }
 
     /**
-     * Generate a unique booking code (APT-YYYYMMDD-XXXXX).
+     * Generate a unique booking code (APT-YYYYMMDD-XXXXXXXX).
      *
      * Shared by the web booking flow and the Filament admin create form
      * so the uniqueness retry logic lives in exactly one place.
      */
     public static function generateBookingCode(): string
     {
-        $code = 'APT-'.date('Ymd').'-'.strtoupper(Str::random(5));
+        $code = self::newBookingCode();
         $maxAttempts = 3;
         $attempts = 0;
 
@@ -228,10 +228,15 @@ class Booking extends Model
                 throw new \RuntimeException('Gagal membuat kode booking unik. Silakan coba lagi.');
             }
 
-            $code = 'APT-'.date('Ymd').'-'.strtoupper(Str::random(5));
+            $code = self::newBookingCode();
         }
 
         return $code;
+    }
+
+    private static function newBookingCode(): string
+    {
+        return 'APT-'.date('Ymd').'-'.strtoupper(Str::random(8));
     }
 
     public function user(): BelongsTo
