@@ -9,88 +9,97 @@
 @endphp
 
 @section('content')
-    <section class="border-b border-white/10 bg-ink-900">
+    <section class="border-b border-ink-300 bg-paper-200">
         <div class="site-container py-12 sm:py-14">
-            <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
-                <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
-                <span aria-hidden="true">›</span>
-                <a href="{{ route('apartments.index') }}" class="transition-colors hover:text-gold-300">Katalog Unit</a>
-                <span aria-hidden="true">›</span>
-                <span class="truncate text-ink-200" aria-current="page">{{ $apartment->title }}</span>
+            <nav class="annotation flex items-center gap-2 uppercase" aria-label="Breadcrumb">
+                <a href="{{ route('home') }}" class="transition-colors hover:text-blueprint-700">Beranda</a>
+                <span aria-hidden="true">/</span>
+                <a href="{{ route('apartments.index') }}" class="transition-colors hover:text-blueprint-700">Katalog unit</a>
+                <span aria-hidden="true">/</span>
+                <span class="truncate text-ink-700" aria-current="page">{{ $apartment->title }}</span>
             </nav>
 
-            <p class="section-eyebrow mt-6">{{ $apartment->city }}</p>
-            <h1 class="mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl">
+            <h1 class="mt-6 max-w-3xl text-4xl font-bold leading-[1.05] tracking-[-0.02em] text-ink-900 sm:text-5xl">
                 {{ $apartment->title }}
             </h1>
-            <p class="mt-4 flex items-start gap-2 text-sm leading-6 text-ink-300">
-                <svg class="mt-0.5 h-4 w-4 shrink-0 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <p class="mt-4 flex items-start gap-2 font-annotation text-sm text-ink-600">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-blueprint-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z" />
                     <circle cx="12" cy="10" r="3" stroke-width="1.8" />
                 </svg>
-                {{ $apartment->address }}
+                {{ $apartment->address }}, {{ $apartment->city }}
             </p>
         </div>
     </section>
 
-    <section class="bg-ink-950 pt-8 sm:pt-10">
-        <div class="site-container grid gap-2 md:grid-cols-3">
-            <div class="relative h-[300px] overflow-hidden bg-ink-800 sm:h-[420px] md:col-span-2">
-                <img src="{{ $apartment->display_image_url }}" alt="{{ $apartment->title }}" class="h-full w-full object-cover" fetchpriority="high" decoding="async">
+    {{-- Plat galeri: foto utama + dua plat samping, sisa foto ditandai arsiran. --}}
+    <section class="bg-paper-100 pt-8 sm:pt-10">
+        <div class="site-container grid gap-3 md:grid-cols-3">
+            <div class="plate md:col-span-2">
+                <div class="relative h-[280px] overflow-hidden bg-paper-300 sm:h-[420px]">
+                    <img src="{{ $apartment->display_image_url }}" alt="{{ $apartment->title }}" class="h-full w-full object-cover" fetchpriority="high" decoding="async">
+                </div>
             </div>
 
-            <div class="grid h-[180px] grid-cols-2 gap-2 sm:h-[420px] md:grid-cols-1">
+            <div class="grid gap-3 md:h-full md:grid-rows-2">
                 @forelse(array_slice($gallery, 0, 2) as $index => $img)
-                    <div class="relative overflow-hidden bg-ink-800">
-                        <img src="{{ $img }}" alt="Foto {{ $apartment->title }} nomor {{ $index + 2 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
-                        @if($loop->last && $extraPhotos > 0)
-                            <span class="absolute inset-x-0 bottom-0 bg-ink-950/85 px-3 py-2 text-center text-xs font-bold uppercase tracking-[0.14em] text-ivory-100">
-                                +{{ $extraPhotos }} foto lainnya
-                            </span>
-                        @endif
+                    <div class="plate h-[160px] sm:h-[204px]">
+                        <div class="relative h-full w-full overflow-hidden bg-paper-300">
+                            <img src="{{ $img }}" alt="Foto {{ $apartment->title }} nomor {{ $index + 2 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+                            @if($loop->last && $extraPhotos > 0)
+                                <span class="absolute inset-0 flex items-center justify-center bg-paper-50/85 font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-800 hatch">
+                                    +{{ $extraPhotos }} foto lainnya
+                                </span>
+                            @endif
+                        </div>
                     </div>
                 @empty
-                    <div class="relative col-span-2 overflow-hidden bg-ink-800 md:col-span-1">
-                        <img src="{{ $apartment->display_image_url }}" alt="" class="h-full w-full object-cover opacity-40" loading="lazy" decoding="async">
+                    <div class="plate h-[160px] sm:h-[204px] md:row-span-2">
+                        <div class="h-full w-full overflow-hidden bg-paper-300">
+                            <img src="{{ $apartment->display_image_url }}" alt="" class="h-full w-full object-cover opacity-40" loading="lazy" decoding="async">
+                        </div>
                     </div>
                 @endforelse
             </div>
         </div>
     </section>
+
     {{-- Ruang untuk bar CTA mobile diberikan sekali di body (app.css), bukan
          lewat padding besar di section ini — kalau di sini, footer-nya yang
          tertutup. --}}
-    <section class="bg-ink-950 pb-16 pt-12 sm:pt-16">
+    <section class="bg-paper-100 pb-16 pt-12 sm:pt-16">
         <div class="site-container grid gap-12 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-14">
             <div class="min-w-0 space-y-14">
                 <div>
-                    <h2 class="section-eyebrow">Spesifikasi unit</h2>
-                    <div class="mt-5 grid grid-cols-2 border-l border-t border-white/10 sm:grid-cols-4">
+                    <h2 class="text-2xl font-bold tracking-[-0.015em] text-ink-900">Spesifikasi unit</h2>
+                    {{-- Tabel spesifikasi: grid garis tipis seperti schedule
+                         material di lembar gambar. --}}
+                    <div class="mt-5 grid grid-cols-2 border-l border-t border-ink-300 sm:grid-cols-4">
                         @foreach([
                             ['label' => 'Kamar tidur', 'value' => $apartment->bedrooms . ' kamar', 'icon' => 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6'],
                             ['label' => 'Kamar mandi', 'value' => $apartment->bathrooms . ' kamar', 'icon' => 'M4 12h16v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5Zm3-9a3 3 0 0 0-3 3v6'],
                             ['label' => 'Luas unit', 'value' => $apartment->area_sqm . ' m²', 'icon' => 'M4 8V4h4M20 8V4h-4M4 16v4h4m12-4v4h-4'],
                             ['label' => 'Kapasitas', 'value' => $apartment->capacity . ' orang', 'icon' => 'M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 4a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm7.5 3.5a3 3 0 0 1 0 6M21 20v-2a4 4 0 0 0-3-3.87'],
                         ] as $spec)
-                            <div class="border-b border-r border-white/10 px-4 py-5 sm:px-5">
-                                <svg class="h-5 w-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <div class="border-b border-r border-ink-300 bg-paper-50 px-4 py-5 sm:px-5">
+                                <svg class="h-5 w-5 text-blueprint-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="{{ $spec['icon'] }}" />
                                 </svg>
-                                <p class="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-ink-400">{{ $spec['label'] }}</p>
-                                <p class="mt-1 text-sm font-semibold text-white">{{ $spec['value'] }}</p>
+                                <p class="annotation mt-3 uppercase">{{ $spec['label'] }}</p>
+                                <p class="mt-1 font-annotation text-sm font-bold text-ink-900">{{ $spec['value'] }}</p>
                             </div>
                         @endforeach
                     </div>
                 </div>
 
                 <div>
-                    <h2 class="section-eyebrow">Tentang unit ini</h2>
+                    <h2 class="text-2xl font-bold tracking-[-0.015em] text-ink-900">Tentang unit ini</h2>
                     {{-- Deskripsi panjang dibatasi tingginya, bukan dipotong
                          isinya: teks lengkap tetap ada di DOM. Togglenya
                          <details> native, jadi bisa dioperasikan keyboard tanpa
                          JS. Ambang 700 karakter ≈ 10 baris pada kolom ini. --}}
                     @php $descriptionIsLong = mb_strlen((string) $apartment->description) > 700; @endphp
-                    <div class="mt-5 max-w-2xl text-sm leading-7 text-ink-200 {{ $descriptionIsLong ? 'prose-clamp' : '' }}">
+                    <div class="mt-5 max-w-2xl text-[0.9375rem] leading-7 text-ink-700 {{ $descriptionIsLong ? 'prose-clamp' : '' }}">
                         {!! nl2br(e($apartment->description)) !!}
                     </div>
                     @if($descriptionIsLong)
@@ -105,127 +114,140 @@
 
                 @if($apartment->facilities->isNotEmpty())
                     <div>
-                        <h2 class="section-eyebrow">Fasilitas unit</h2>
-                        <div class="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <h2 class="text-2xl font-bold tracking-[-0.015em] text-ink-900">Fasilitas unit</h2>
+                        <ul class="mt-5 grid grid-cols-1 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach($apartment->facilities as $fac)
-                                <div class="flex items-center gap-3 border-b border-white/8 pb-4">
-                                    <span class="shrink-0 text-gold-400">
+                                <li class="flex items-center gap-3 border-b border-ink-200 py-3.5">
+                                    <span class="shrink-0 text-blueprint-600">
                                         <x-facility-icon :name="$fac->icon" class="h-5 w-5" />
                                     </span>
-                                    <span class="min-w-0 text-sm text-ivory-100">{{ $fac->name }}</span>
-                                </div>
+                                    <span class="min-w-0 text-sm text-ink-800">{{ $fac->name }}</span>
+                                </li>
                             @endforeach
-                        </div>
+                        </ul>
                     </div>
                 @endif
             </div>
+
+            {{-- Formulir reservasi: panel teknis sticky dengan judul blok,
+                 harga mono, dan kalkulasi yang dihitung ulang langsung. --}}
             <div class="lg:sticky lg:top-24">
-                <div class="border border-white/10 bg-ink-900 p-6">
-                    <p class="section-eyebrow before:hidden">Mulai dari</p>
-                    <p class="mt-2 text-2xl font-semibold tracking-[-0.02em] text-ivory-100">
-                        IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
-                        <span class="text-xs font-normal text-ink-400">/ malam</span>
-                    </p>
+                <div class="border border-ink-300 bg-paper-50 shadow-[0_16px_40px_-24px_rgba(23,26,21,.3)]">
+                    <div class="flex items-center justify-between border-b border-ink-300 bg-paper-200 px-5 py-3">
+                        <h2 class="font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-800">Formulir reservasi</h2>
+                        <span class="annotation uppercase">FR-{{ str_pad((string) $apartment->id, 3, '0', STR_PAD_LEFT) }}</span>
+                    </div>
 
-                    <form action="{{ route('bookings.store') }}" method="POST" id="bookingForm" class="mt-7 space-y-4" data-submit-loading>
-                        @csrf
-                        <input type="hidden" name="apartment_id" value="{{ $apartment->id }}">
+                    <div class="p-5">
+                        <p class="annotation uppercase">Tarif per malam</p>
+                        <p class="mt-1.5 font-annotation text-2xl font-bold tracking-[-0.01em] text-ink-900">
+                            IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
+                            <span class="text-xs font-normal text-ink-500">/ malam</span>
+                        </p>
 
-                        <div>
-                            <label class="search-field @error('check_in') border-rose-400/70 @enderror">
-                                <span class="search-field__label">Tanggal check-in</span>
-                                <input type="date" name="check_in" id="check_in" value="{{ old('check_in') }}" min="{{ date('Y-m-d') }}" required
-                                    @error('check_in') aria-invalid="true" aria-describedby="check_in_error" @enderror
-                                    class="search-field__control">
-                            </label>
-                            @error('check_in')
-                                <p id="check_in_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
+                        <form action="{{ route('bookings.store') }}" method="POST" id="bookingForm" class="mt-6 space-y-4" data-submit-loading>
+                            @csrf
+                            <input type="hidden" name="apartment_id" value="{{ $apartment->id }}">
+
+                            <div>
+                                <label class="field @error('check_in') field--error @enderror">
+                                    <span class="field__label">Tanggal check-in</span>
+                                    <input type="date" name="check_in" id="check_in" value="{{ old('check_in') }}" min="{{ date('Y-m-d') }}" required
+                                        @error('check_in') aria-invalid="true" aria-describedby="check_in_error" @enderror
+                                        class="field__control">
+                                </label>
+                                @error('check_in')
+                                    <p id="check_in_error" class="mt-1.5 text-xs leading-5 text-dimension-700">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="field @error('check_out') field--error @enderror">
+                                    <span class="field__label">Tanggal check-out</span>
+                                    <input type="date" name="check_out" id="check_out" value="{{ old('check_out') }}" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required
+                                        @error('check_out') aria-invalid="true" aria-describedby="check_out_error" @enderror
+                                        class="field__control">
+                                </label>
+                                @error('check_out')
+                                    <p id="check_out_error" class="mt-1.5 text-xs leading-5 text-dimension-700">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <p id="availabilityMessage" class="hidden" role="status" aria-live="polite"></p>
+
+                            @if($bookedDates->isNotEmpty())
+                                {{-- Tanggal terisi digambar arsir — kekosongan kalender
+                                     jadi bagian sistem, bukan catatan kaki. --}}
+                                <details class="border border-ink-200 bg-paper-100 px-3 py-2.5">
+                                    <summary class="cursor-pointer font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-600 transition-colors hover:text-blueprint-700">
+                                        Tanggal tidak tersedia ({{ $bookedDates->count() }} periode)
+                                    </summary>
+                                    <ul class="mt-2.5 space-y-1.5">
+                                        @foreach($bookedDates as $range)
+                                            <li class="hatch px-2 py-1 font-annotation text-xs leading-5 text-ink-600">
+                                                {{ \Illuminate\Support\Carbon::parse($range['from'])->translatedFormat('d M Y') }}
+                                                &ndash;
+                                                {{ \Illuminate\Support\Carbon::parse($range['to'])->translatedFormat('d M Y') }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </details>
+                            @endif
+
+                            <div>
+                                <label for="notes" class="field__label block">Catatan khusus (opsional)</label>
+                                <textarea name="notes" id="notes" rows="2" placeholder="Permintaan khusus / perkiraan waktu kedatangan"
+                                    class="mt-2 w-full border border-ink-300 bg-paper-100 px-3 py-2.5 font-annotation text-sm text-ink-900 placeholder:text-ink-400 focus:border-blueprint-500">{{ old('notes') }}</textarea>
+                                @error('notes')
+                                    <p class="mt-1.5 text-xs leading-5 text-dimension-700">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div id="priceCalculationCard" class="hidden space-y-2 border-t border-ink-300 pt-4">
+                                <div class="flex justify-between gap-4 font-annotation text-xs text-ink-600">
+                                    <span>Tarif per malam</span>
+                                    <span>IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between gap-4 font-annotation text-xs text-ink-600">
+                                    <span>Durasi menginap</span>
+                                    <span id="calcNights">0 malam</span>
+                                </div>
+                                <div class="flex justify-between gap-4 font-annotation text-xs text-ink-600">
+                                    <span>Subtotal</span>
+                                    <span id="calcSubtotal">IDR 0</span>
+                                </div>
+                                <div class="flex items-baseline justify-between gap-4 border-t border-ink-300 pt-3">
+                                    <span class="annotation font-bold uppercase">Total</span>
+                                    <span id="calcTotalPrice" class="font-annotation text-base font-bold text-dimension-600">IDR 0</span>
+                                </div>
+                            </div>
+
+                            @error('payment')
+                                <p class="border border-dimension-500 bg-dimension-50 px-4 py-3 text-xs leading-5 text-dimension-700" role="alert">{{ $message }}</p>
                             @enderror
-                        </div>
 
-                        <div>
-                            <label class="search-field @error('check_out') border-rose-400/70 @enderror">
-                                <span class="search-field__label">Tanggal check-out</span>
-                                <input type="date" name="check_out" id="check_out" value="{{ old('check_out') }}" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required
-                                    @error('check_out') aria-invalid="true" aria-describedby="check_out_error" @enderror
-                                    class="search-field__control">
-                            </label>
-                            @error('check_out')
-                                <p id="check_out_error" class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <p id="availabilityMessage" class="hidden" role="status" aria-live="polite"></p>
-
-                        @if($bookedDates->isNotEmpty())
-                            <details class="border border-white/6 bg-ink-950/70 px-3 py-2.5">
-                                <summary class="cursor-pointer text-xs font-bold uppercase tracking-[0.14em] text-ink-400 transition-colors hover:text-gold-300">
-                                    Tanggal tidak tersedia ({{ $bookedDates->count() }} periode)
-                                </summary>
-                                <ul class="mt-2.5 space-y-1 text-xs leading-5 text-ink-400">
-                                    @foreach($bookedDates as $range)
-                                        <li class="line-through decoration-rose-400/60">
-                                            {{ \Illuminate\Support\Carbon::parse($range['from'])->translatedFormat('d M Y') }}
-                                            &ndash;
-                                            {{ \Illuminate\Support\Carbon::parse($range['to'])->translatedFormat('d M Y') }}
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </details>
-                        @endif
-
-                        <div>
-                            <label for="notes" class="search-field__label block">Catatan khusus (opsional)</label>
-                            <textarea name="notes" id="notes" rows="2" placeholder="Permintaan khusus / perkiraan waktu kedatangan"
-                                class="mt-2 w-full border border-white/6 bg-ink-950/70 px-3 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-gold-400/65">{{ old('notes') }}</textarea>
-                            @error('notes')
-                                <p class="mt-1.5 text-xs leading-5 text-rose-300">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div id="priceCalculationCard" class="hidden space-y-2 border-t border-white/10 pt-4">
-                            <div class="flex justify-between gap-4 text-xs text-ink-300">
-                                <span>Tarif per malam</span>
-                                <span>IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between gap-4 text-xs text-ink-300">
-                                <span>Durasi menginap</span>
-                                <span id="calcNights">0 malam</span>
-                            </div>
-                            <div class="flex justify-between gap-4 text-xs text-ink-300">
-                                <span>Subtotal</span>
-                                <span id="calcSubtotal">IDR 0</span>
-                            </div>
-                            <div class="flex items-baseline justify-between gap-4 border-t border-white/10 pt-3">
-                                <span class="text-xs font-bold uppercase tracking-[0.14em] text-ink-400">Total</span>
-                                <span id="calcTotalPrice" class="text-base font-semibold text-gold-400">IDR 0</span>
-                            </div>
-                        </div>
-
-                        @error('payment')
-                            <p class="border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs leading-5 text-rose-200" role="alert">{{ $message }}</p>
-                        @enderror
-
-                        @auth
-                            <button type="submit" id="submitBtn" class="gold-button w-full" data-loading-label="Memproses...">
-                                <span>Booking Sekarang</span>
-                            </button>
-                            <p class="text-center text-xs font-bold uppercase tracking-[0.12em] text-ink-400">
-                                Belum ada penagihan pada langkah ini
-                            </p>
-                            {{-- Penyebutan Midtrans dibatasi pada faktanya: gateway-nya
-                                 yang mengambil detail pembayaran di langkah berikutnya. --}}
-                            <p class="text-center text-xs leading-5 text-ink-400">
-                                Anda akan meninjau ringkasan reservasi lebih dulu, lalu membayar melalui Midtrans.
-                            </p>
-                        @else
-                            <a href="{{ route('login') }}" class="flex min-h-11 w-full items-center justify-center border border-white/15 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-gold-400/50 hover:text-gold-300">
-                                Masuk untuk booking
-                            </a>
-                            <p class="text-center text-xs leading-5 text-ink-400">
-                                Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-gold-400 transition-colors hover:text-gold-200">Daftar dulu</a>
-                            </p>
-                        @endauth
-                    </form>
+                            @auth
+                                <button type="submit" id="submitBtn" class="btn-primary w-full" data-loading-label="Memproses...">
+                                    <span>Booking Sekarang</span>
+                                </button>
+                                <p class="text-center font-annotation text-xs font-bold uppercase tracking-[0.06em] text-ink-500">
+                                    Belum ada penagihan pada langkah ini
+                                </p>
+                                {{-- Penyebutan Midtrans dibatasi pada faktanya: gateway-nya
+                                     yang mengambil detail pembayaran di langkah berikutnya. --}}
+                                <p class="text-center text-xs leading-5 text-ink-500">
+                                    Anda akan meninjau ringkasan reservasi lebih dulu, lalu membayar melalui Midtrans.
+                                </p>
+                            @else
+                                <a href="{{ route('login') }}" class="btn-secondary w-full">
+                                    Masuk untuk booking
+                                </a>
+                                <p class="text-center text-xs leading-5 text-ink-500">
+                                    Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-blueprint-700 transition-colors hover:text-blueprint-500">Daftar dulu</a>
+                                </p>
+                            @endauth
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -242,19 +264,19 @@
          Status disabled-nya ikut diatur pengecekan ketersediaan di bawah. --}}
     <div class="mobile-cta-bar" data-no-print>
         <div class="min-w-0">
-            <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-400">Mulai dari</p>
-            <p class="mt-0.5 truncate text-sm font-semibold text-ivory-100">
+            <p class="annotation uppercase">Mulai dari</p>
+            <p class="mt-0.5 truncate font-annotation text-sm font-bold text-ink-900">
                 IDR {{ number_format($apartment->price_per_night, 0, ',', '.') }}
-                <span class="text-xs font-normal text-ink-400">/ malam</span>
+                <span class="font-normal text-ink-500">/ malam</span>
             </p>
         </div>
 
         @auth
-            <button type="submit" form="bookingForm" class="gold-button shrink-0" data-loading-label="Memproses...">
+            <button type="submit" form="bookingForm" class="btn-primary shrink-0" data-loading-label="Memproses...">
                 <span data-mobile-cta-label>Booking</span>
             </button>
         @else
-            <a href="{{ route('login') }}" class="gold-button shrink-0">Masuk untuk booking</a>
+            <a href="{{ route('login') }}" class="btn-primary shrink-0">Masuk untuk booking</a>
         @endauth
     </div>
 
@@ -291,9 +313,9 @@
                     bookedRanges.some((range) => range.from < checkOut && range.to > checkIn);
 
                 const TONES = {
-                    ok: 'border border-emerald-400/40 bg-emerald-500/10 px-3 py-2.5 text-xs leading-5 text-emerald-200',
-                    busy: 'border border-white/10 bg-white/5 px-3 py-2.5 text-xs leading-5 text-ink-300',
-                    error: 'border border-rose-400/40 bg-rose-500/10 px-3 py-2.5 text-xs leading-5 text-rose-200',
+                    ok: 'border border-emerald-700/40 bg-emerald-50 px-3 py-2.5 text-xs leading-5 text-emerald-800',
+                    busy: 'border border-ink-300 bg-paper-50 px-3 py-2.5 text-xs leading-5 text-ink-600',
+                    error: 'border border-dimension-500 bg-dimension-50 px-3 py-2.5 text-xs leading-5 text-dimension-700',
                 };
 
                 function setMessage(text, tone) {

@@ -43,7 +43,7 @@ class UiPolishTest extends TestCase
     {
         $response = $this->get('/halaman-yang-tidak-ada')->assertNotFound();
 
-        $response->assertSee('Halaman tidak ditemukan')
+        $response->assertSee('Lembar tidak ditemukan')
             ->assertSee('Error 404')
             ->assertSee('Kembali ke beranda')
             // layout situs ikut terpakai (navbar + footer), bukan halaman putih Laravel

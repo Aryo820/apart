@@ -1,41 +1,50 @@
-<header class="sticky top-0 z-50 border-b border-white/10 bg-ink-900/95 backdrop-blur-md">
-    <div class="site-container flex h-[72px] items-center justify-between gap-5">
-        <a href="{{ route('home') }}" class="flex min-h-11 items-center gap-2 font-display text-lg font-semibold tracking-[-0.02em] text-white" aria-label="Santhosa, kembali ke beranda">
-            <span class="h-2 w-2 rounded-full bg-gold-400 shadow-[0_0_16px_rgba(228,184,47,.7)]" aria-hidden="true"></span>
-            <span>Santhosa</span>
+{{-- Title block lembar gambar: sel proyek di kiri, indeks lembar di tengah,
+     sel pengguna + aksi di kanan. Perilaku (toggle, aria, id) identik dengan
+     sebelumnya — app.js bergantung pada atribut data-* di bawah. --}}
+<header class="sticky top-0 z-50 border-b border-ink-300 bg-paper-50">
+    <div class="site-container flex h-[72px] items-stretch justify-between gap-5">
+        <a href="{{ route('home') }}" class="flex min-h-11 items-center gap-2.5 self-center" aria-label="Santhosa, kembali ke beranda">
+            <svg class="h-5 w-5 shrink-0 text-dimension-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="10" cy="10" r="6.5" />
+                <path stroke-linecap="round" d="M10 0.5v4M10 15.5v4M0.5 10h4M15.5 10h4" />
+                <circle cx="10" cy="10" r="1.2" fill="currentColor" stroke="none" />
+            </svg>
+            <span class="font-xwide text-lg font-extrabold uppercase leading-none tracking-[0.02em] text-ink-900">
+                Santhosa
+            </span>
         </a>
 
-        <nav class="hidden items-center gap-8 lg:flex" aria-label="Navigasi utama">
-            <a href="{{ route('home') }}" class="min-h-11 content-center text-xs font-semibold transition-colors {{ request()->routeIs('home') ? 'text-white' : 'text-ink-300 hover:text-white' }}">Beranda</a>
-            <a href="{{ route('apartments.index') }}" class="min-h-11 content-center text-xs font-semibold transition-colors {{ request()->routeIs('apartments.*') ? 'text-white' : 'text-ink-300 hover:text-white' }}">Unit</a>
-            <a href="{{ route('home') }}#facilities" class="min-h-11 content-center text-xs font-semibold text-ink-300 transition-colors hover:text-white">Fasilitas</a>
+        <nav class="hidden items-center gap-7 lg:flex" aria-label="Navigasi utama">
+            <a href="{{ route('home') }}" class="flex min-h-11 items-center border-b-2 font-annotation text-xs font-bold uppercase tracking-[0.08em] transition-colors {{ request()->routeIs('home') ? 'border-dimension-600 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-900' }}">Beranda</a>
+            <a href="{{ route('apartments.index') }}" class="flex min-h-11 items-center border-b-2 font-annotation text-xs font-bold uppercase tracking-[0.08em] transition-colors {{ request()->routeIs('apartments.*') ? 'border-dimension-600 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-900' }}">Unit</a>
+            <a href="{{ route('home') }}#facilities" class="flex min-h-11 items-center border-b-2 border-transparent font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-500 transition-colors hover:text-ink-900">Fasilitas</a>
         </nav>
 
-        <div class="hidden items-center gap-4 lg:flex">
+        <div class="hidden items-center gap-5 lg:flex">
             @auth
                 @if(Auth::user()->isAdmin())
-                    <a href="/admin" class="min-h-11 content-center text-xs font-semibold text-gold-300 transition-colors hover:text-gold-200">Admin</a>
+                    <a href="/admin" class="flex min-h-11 items-center font-annotation text-xs font-bold uppercase tracking-[0.08em] text-blueprint-700 transition-colors hover:text-blueprint-500">Admin</a>
                 @endif
-                <a href="{{ route('bookings.index') }}" class="min-h-11 content-center text-xs font-semibold text-ink-200 transition-colors hover:text-white">Booking saya</a>
+                <a href="{{ route('bookings.index') }}" class="flex min-h-11 items-center font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-600 transition-colors hover:text-ink-900">Booking saya</a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
-                    <button type="submit" class="flex min-h-11 items-center gap-2 text-xs font-semibold text-ink-300 transition-colors hover:text-white">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-ink-800 text-xs font-bold text-gold-300">
+                    <button type="submit" class="flex min-h-11 items-center gap-2 font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-500 transition-colors hover:text-ink-900">
+                        <span class="flex h-8 w-8 items-center justify-center border border-ink-300 bg-paper-200 font-annotation text-xs font-bold text-blueprint-700">
                             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </span>
                         Keluar
                     </button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="min-h-11 content-center text-xs font-semibold text-ink-200 transition-colors hover:text-white">Masuk</a>
+                <a href="{{ route('login') }}" class="flex min-h-11 items-center font-annotation text-xs font-bold uppercase tracking-[0.08em] text-ink-600 transition-colors hover:text-ink-900">Masuk</a>
             @endauth
 
-            <a href="{{ route('apartments.index') }}" class="gold-button min-w-40">Pesan sekarang</a>
+            <a href="{{ route('apartments.index') }}" class="btn-primary min-w-40">Pesan sekarang</a>
         </div>
 
         <button
             type="button"
-            class="flex h-11 w-11 items-center justify-center border border-white/10 text-white transition-colors hover:border-gold-400/50 hover:text-gold-300 lg:hidden"
+            class="my-auto flex h-11 w-11 items-center justify-center border border-ink-300 text-ink-800 transition-colors hover:border-blueprint-500 hover:text-blueprint-700 lg:hidden"
             aria-label="Buka menu navigasi"
             aria-controls="mobile-navigation"
             aria-expanded="false"
@@ -47,27 +56,27 @@
         </button>
     </div>
 
-    <div id="mobile-navigation" class="hidden border-t border-white/10 bg-ink-900 lg:hidden" data-mobile-menu>
+    <div id="mobile-navigation" class="hidden border-t border-ink-300 bg-paper-50 lg:hidden" data-mobile-menu>
         <nav class="site-container flex max-h-[calc(100svh-72px)] flex-col overflow-y-auto py-5" aria-label="Navigasi mobile">
-            <a href="{{ route('home') }}" class="flex min-h-12 items-center border-b border-white/8 text-sm font-semibold text-white">Beranda</a>
-            <a href="{{ route('apartments.index') }}" class="flex min-h-12 items-center border-b border-white/8 text-sm font-semibold text-ink-200">Unit</a>
-            <a href="{{ route('home') }}#facilities" class="flex min-h-12 items-center border-b border-white/8 text-sm font-semibold text-ink-200">Fasilitas</a>
+            <a href="{{ route('home') }}" class="flex min-h-12 items-center border-b border-ink-200 font-annotation text-sm font-bold uppercase tracking-[0.06em] text-ink-900">Beranda</a>
+            <a href="{{ route('apartments.index') }}" class="flex min-h-12 items-center border-b border-ink-200 font-annotation text-sm font-bold uppercase tracking-[0.06em] text-ink-600">Unit</a>
+            <a href="{{ route('home') }}#facilities" class="flex min-h-12 items-center border-b border-ink-200 font-annotation text-sm font-bold uppercase tracking-[0.06em] text-ink-600">Fasilitas</a>
 
             @auth
-                <a href="{{ route('bookings.index') }}" class="flex min-h-12 items-center border-b border-white/8 text-sm font-semibold text-ink-200">Booking saya</a>
+                <a href="{{ route('bookings.index') }}" class="flex min-h-12 items-center border-b border-ink-200 font-annotation text-sm font-bold uppercase tracking-[0.06em] text-ink-600">Booking saya</a>
                 @if(Auth::user()->isAdmin())
-                    <a href="/admin" class="flex min-h-12 items-center border-b border-white/8 text-sm font-semibold text-gold-300">Panel admin</a>
+                    <a href="/admin" class="flex min-h-12 items-center border-b border-ink-200 font-annotation text-sm font-bold uppercase tracking-[0.06em] text-blueprint-700">Panel admin</a>
                 @endif
                 <form action="{{ route('logout') }}" method="POST" class="mt-4">
                     @csrf
-                    <button type="submit" class="flex min-h-11 w-full items-center justify-center border border-white/15 text-sm font-semibold text-white">Keluar</button>
+                    <button type="submit" class="btn-secondary w-full">Keluar</button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="mt-4 flex min-h-11 items-center justify-center border border-white/15 text-sm font-semibold text-white">Masuk</a>
-                <a href="{{ route('register') }}" class="mt-2 flex min-h-11 items-center justify-center text-sm font-semibold text-ink-200">Buat akun</a>
+                <a href="{{ route('login') }}" class="btn-secondary mt-4 w-full">Masuk</a>
+                <a href="{{ route('register') }}" class="mt-2 flex min-h-11 items-center justify-center font-annotation text-sm font-bold uppercase tracking-[0.06em] text-ink-600">Buat akun</a>
             @endauth
 
-            <a href="{{ route('apartments.index') }}" class="gold-button mt-3 w-full">Pesan sekarang</a>
+            <a href="{{ route('apartments.index') }}" class="btn-primary mt-3 w-full">Pesan sekarang</a>
         </nav>
     </div>
 </header>

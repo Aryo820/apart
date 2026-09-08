@@ -337,7 +337,7 @@ class ApartmentBookingTest extends TestCase
 
         $this->get('/apartments?page=2')
             ->assertOk()
-            ->assertSee('Menampilkan 10–10 dari 10 unit', false);
+            ->assertSee('Lembar 10–10 dari 10 unit', false);
     }
 
     public function test_listing_filters_come_back_populated_in_the_sidebar(): void

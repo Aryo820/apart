@@ -6,75 +6,84 @@
 @source '../js/**/*.js';
 
 /*
- * Applies only where a real pointer can hover. Used for the card photo's
- * grayscale-at-rest treatment: on touch there is no hover, so without this
- * the photos would stay gray forever.
+ * Dipakai untuk perlakuan foto kartu saat hover: di perangkat sentuh tidak ada
+ * hover, jadi tanpa varian ini efeknya akan menempel selamanya.
  */
 @custom-variant hover-device (@media (hover: hover));
 
+/*
+ * DUNIA VISUAL: "Denah & Brosur Teknis".
+ * Kertas drafting terang, tinta grafit, biru drafting untuk struktur,
+ * merah dimensi khusus aksi & pengukuran. Archivo untuk huruf brosur
+ * (sumbu width untuk masthead), Fragment Mono untuk anotasi teknis.
+ */
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-display: 'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+    --font-sans: 'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-annotation: 'Fragment Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
 
-    --color-ink-950: #07101f;
-    --color-ink-900: #101a30;
-    --color-ink-800: #182641;
-    --color-ink-700: #243453;
-    --color-ink-600: #354566;
-    --color-ink-500: #5e6b84;
-    --color-ink-400: #748098;
-    --color-ink-300: #98a2b7;
-    --color-ink-200: #c5cad5;
+    /* Kertas drafting */
+    --color-paper-50: #fbfaf5;
+    --color-paper-100: #f6f4ed;
+    --color-paper-200: #efede3;
+    --color-paper-300: #e6e3d6;
+    --color-paper-400: #d9d5c5;
 
-    --color-gold-50: #fffbed;
-    --color-gold-100: #fff3c6;
-    --color-gold-200: #ffe787;
-    --color-gold-300: #f8d14d;
-    --color-gold-400: #e4b82f;
-    --color-gold-500: #c99a18;
-    --color-gold-600: #a8760e;
-    --color-gold-700: #86580f;
-    --color-gold-800: #704613;
-    --color-gold-900: #603b15;
+    /* Tinta grafit */
+    --color-ink-50: #f3f4f1;
+    --color-ink-100: #e4e6e1;
+    --color-ink-200: #d0d3cc;
+    --color-ink-300: #b0b4ab;
+    --color-ink-400: #8f948b;
+    --color-ink-500: #6d726a;
+    --color-ink-600: #52574f;
+    --color-ink-700: #3c413a;
+    --color-ink-800: #262a23;
+    --color-ink-900: #171a15;
 
-    --color-ivory-50: #fffdf8;
-    --color-ivory-100: #f6f1e7;
-    --color-ivory-200: #e9e1d3;
+    /* Biru drafting — struktur, tautan, fokus */
+    --color-blueprint-50: #eef3f8;
+    --color-blueprint-100: #dde8f2;
+    --color-blueprint-200: #b9cee2;
+    --color-blueprint-400: #3f74ab;
+    --color-blueprint-500: #2a5f96;
+    --color-blueprint-600: #1d4f8c;
+    --color-blueprint-700: #174070;
+    --color-blueprint-800: #123257;
 
-    --color-brand-50: #fffbed;
-    --color-brand-100: #fff3c6;
-    --color-brand-200: #ffe787;
-    --color-brand-300: #f8d14d;
-    --color-brand-400: #e4b82f;
-    --color-brand-500: #c99a18;
-    --color-brand-600: #a8760e;
-    --color-brand-700: #86580f;
-    --color-brand-800: #704613;
-    --color-brand-900: #603b15;
-    --color-brand-950: #352008;
-
-    --color-accent-500: #e4b82f;
-    --color-accent-600: #c99a18;
+    /* Merah dimensi — pengukuran & aksi utama */
+    --color-dimension-50: #faf0ec;
+    --color-dimension-100: #f4ddd5;
+    --color-dimension-200: #e8bcae;
+    --color-dimension-400: #d4553a;
+    --color-dimension-500: #c23a1f;
+    --color-dimension-600: #a82f17;
+    --color-dimension-700: #8a2712;
 }
 
 @layer base {
     :root {
-        color-scheme: dark;
+        color-scheme: light;
     }
 
     html {
         min-width: 320px;
-        background: var(--color-ink-950);
+        background: var(--color-paper-100);
     }
 
     body {
         overflow-x: hidden;
-        background: var(--color-ink-950);
+        background: var(--color-paper-100);
+        color: var(--color-ink-700);
     }
 
     ::selection {
-        background: rgb(228 184 47 / 35%);
-        color: white;
+        background: var(--color-blueprint-600);
+        color: var(--color-paper-50);
+    }
+
+    input,
+    textarea {
+        caret-color: var(--color-dimension-600);
     }
 
     button,
@@ -92,19 +101,41 @@
     }
 
     :focus-visible {
-        outline: 2px solid var(--color-gold-300);
-        outline-offset: 3px;
+        outline: 2px solid var(--color-blueprint-600);
+        outline-offset: 2px;
     }
 
     input,
     select,
     textarea {
         font: inherit;
+        accent-color: var(--color-blueprint-600);
     }
 
     option {
-        background: var(--color-ink-900);
-        color: white;
+        background: var(--color-paper-50);
+        color: var(--color-ink-900);
+    }
+
+    /* Permukaan browser ikut didesain: scrollbar tipis tinta di atas kertas. */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-ink-300) transparent;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border: 3px solid var(--color-paper-100);
+        border-radius: 999px;
+        background: var(--color-ink-300);
     }
 }
 
@@ -122,8 +153,8 @@
         left: 0.75rem;
         z-index: 100;
         transform: translateY(-160%);
-        background: var(--color-gold-400);
-        color: var(--color-ink-950);
+        background: var(--color-dimension-600);
+        color: var(--color-paper-50);
         padding: 0.75rem 1rem;
         font-size: 0.875rem;
         font-weight: 700;
@@ -134,124 +165,271 @@
         transform: translateY(0);
     }
 
+    /* Sumbu width Archivo untuk masthead brosur. */
+    .font-wide {
+        font-stretch: 112%;
+    }
+
+    .font-xwide {
+        font-stretch: 125%;
+    }
+
     /*
-     * 0.75rem adalah lantai ukuran teks pendukung di situs ini (sama dengan
-     * text-xs). Eyebrow dan label form sebelumnya di bawahnya (0.68rem ≈ 10.9px
-     * dan 0.58rem ≈ 9.3px) — tracking lebar + huruf kapital membuat keduanya
-     * terbaca lebih kecil lagi daripada angkanya.
+     * Anotasi teknis: label kecil bergaya keterangan gambar kerja. Selalu
+     * memenuhi kontras 4.5:1 di atas kertas (ink-500), bukan abu-abu pucat.
      */
-    .section-eyebrow {
-        color: var(--color-ink-300);
+    .annotation {
+        color: var(--color-ink-500);
+        font-family: var(--font-annotation);
         font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        line-height: 1.5;
+    }
+
+    .annotation--strong {
+        color: var(--color-ink-700);
         font-weight: 700;
-        letter-spacing: 0.24em;
-        line-height: 1.4;
-        text-transform: uppercase;
     }
 
-    .section-eyebrow::before {
-        display: inline-block;
-        width: 1.5rem;
-        height: 1px;
-        margin-right: 0.65rem;
-        vertical-align: middle;
-        background: var(--color-gold-400);
-        content: '';
-    }
-
-    .gold-button {
+    /* Tombol aksi utama: blok merah dimensi, sudut tajam, label mono. */
+    .btn-primary {
         display: inline-flex;
         min-height: 2.75rem;
         align-items: center;
         justify-content: center;
         gap: 0.55rem;
-        border: 1px solid var(--color-gold-400);
-        border-radius: 999px;
-        background: var(--color-gold-400);
+        border: 1px solid var(--color-dimension-600);
+        background: var(--color-dimension-600);
         padding: 0.75rem 1.35rem;
-        color: var(--color-ink-950);
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 0.075em;
+        color: var(--color-paper-50);
+        font-family: var(--font-annotation);
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
         line-height: 1;
         text-transform: uppercase;
-        transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+        transition: background-color 160ms ease-out, border-color 160ms ease-out, transform 160ms ease-out;
     }
 
-    .gold-button:hover {
-        border-color: var(--color-gold-300);
-        background: var(--color-gold-300);
-        transform: translateY(-1px);
+    .btn-primary:hover {
+        border-color: var(--color-dimension-700);
+        background: var(--color-dimension-700);
     }
 
-    .gold-button:disabled {
+    .btn-primary:active {
+        transform: translateY(1px);
+    }
+
+    .btn-primary:disabled {
         cursor: wait;
-        opacity: 0.7;
+        opacity: 0.65;
         transform: none;
+    }
+
+    /* Tombol sekunder: garis tipis tinta di atas kertas terangkat. */
+    .btn-secondary {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1px solid var(--color-ink-300);
+        background: var(--color-paper-50);
+        padding: 0.75rem 1.35rem;
+        color: var(--color-ink-800);
+        font-family: var(--font-annotation);
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        line-height: 1;
+        text-transform: uppercase;
+        transition: border-color 160ms ease-out, color 160ms ease-out, background-color 160ms ease-out;
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--color-blueprint-600);
+        color: var(--color-blueprint-700);
+    }
+
+    .btn-secondary:disabled {
+        cursor: wait;
+        opacity: 0.65;
     }
 
     .inline-link {
         display: inline-flex;
         min-height: 2.75rem;
         align-items: center;
-        gap: 0.25rem;
-        border-bottom: 1px solid rgb(228 184 47 / 45%);
-        color: var(--color-ivory-100);
-        font-size: 0.75rem;
-        font-weight: 600;
-        transition: border-color 180ms ease-out, color 180ms ease-out;
+        gap: 0.3rem;
+        color: var(--color-blueprint-700);
+        font-size: 0.8125rem;
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-color: rgb(29 79 140 / 40%);
+        text-underline-offset: 4px;
+        transition: color 160ms ease-out, text-decoration-color 160ms ease-out;
     }
 
     .inline-link:hover {
-        border-color: var(--color-gold-300);
-        color: var(--color-gold-300);
-    }
-
-    .search-field {
-        display: flex;
-        min-height: 3.5rem;
-        flex-direction: column;
-        justify-content: center;
-        border: 1px solid rgb(255 255 255 / 6%);
-        background: rgb(7 16 31 / 68%);
-        padding: 0.55rem 0.9rem;
-    }
-
-    .search-field:focus-within {
-        border-color: rgb(228 184 47 / 65%);
+        color: var(--color-blueprint-500);
+        text-decoration-color: currentColor;
     }
 
     /*
-     * .search-field__control mematikan outline-nya sendiri supaya ring tidak
-     * menempel ketat di dalam kotak; ring-nya dipindah ke wrapper. :has() dipakai
-     * agar cincin hanya muncul untuk fokus keyboard, bukan setiap klik mouse.
+     * Bidang formulir: kotak garis tipis di atas kertas terangkat, label
+     * anotasi mono, isi memakai mono karena isinya data (tanggal, angka).
      */
-    .search-field:has(:focus-visible) {
-        outline: 2px solid var(--color-gold-300);
-        outline-offset: 3px;
+    .field {
+        display: flex;
+        min-height: 3.25rem;
+        flex-direction: column;
+        justify-content: center;
+        border: 1px solid var(--color-ink-300);
+        background: var(--color-paper-50);
+        padding: 0.5rem 0.8rem;
+        transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
     }
 
-    .search-field__label {
-        color: var(--color-ink-300);
+    .field:hover {
+        border-color: var(--color-ink-400);
+    }
+
+    .field:focus-within {
+        border-color: var(--color-blueprint-500);
+        box-shadow: 0 0 0 3px var(--color-blueprint-100);
+    }
+
+    /* Ring hanya untuk fokus keyboard, bukan setiap klik mouse. */
+    .field:has(:focus-visible) {
+        outline: 2px solid var(--color-blueprint-600);
+        outline-offset: 2px;
+    }
+
+    .field--error {
+        border-color: var(--color-dimension-500);
+    }
+
+    .field__label {
+        color: var(--color-ink-500);
+        font-family: var(--font-annotation);
+        font-size: 0.6875rem;
+        font-weight: 400;
+        letter-spacing: 0.09em;
+        line-height: 1.2;
+        text-transform: uppercase;
+    }
+
+    .field__control {
+        width: 100%;
+        min-height: 1.75rem;
+        border: 0;
+        background: transparent;
+        color: var(--color-ink-900);
+        font-family: var(--font-annotation);
+        font-size: 0.875rem;
+        outline: none;
+    }
+
+    .field__control::placeholder {
+        color: var(--color-ink-400);
+    }
+
+    select.field__control {
+        cursor: pointer;
+    }
+
+    /*
+     * Plat foto: cetak terangkat dengan bingkai tipis, foto duduk di atas
+     * "paspartu" kertas. Bayangan membawa offset dan blur sungguhan.
+     */
+    .plate {
+        border: 1px solid var(--color-ink-200);
+        background: var(--color-paper-50);
+        padding: 0.5rem;
+        box-shadow:
+            0 1px 2px rgb(23 26 21 / 5%),
+            0 16px 40px -20px rgb(23 26 21 / 25%);
+    }
+
+    .plate img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Arsiran: konvensi gambar kerja untuk bidang terisi / tidak tersedia. */
+    .hatch {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgb(23 26 21 / 16%) 0,
+            rgb(23 26 21 / 16%) 1px,
+            transparent 1px,
+            transparent 8px
+        );
+    }
+
+    .hatch--red {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgb(168 47 23 / 22%) 0,
+            rgb(168 47 23 / 22%) 1px,
+            transparent 1px,
+            transparent 8px
+        );
+    }
+
+    /* Kertas milimeter: hanya untuk kanvas hero dan keadaan kosong. */
+    .graph-grid {
+        background-image:
+            linear-gradient(rgb(23 26 21 / 4.5%) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(23 26 21 / 4.5%) 1px, transparent 1px);
+        background-size: 28px 28px;
+    }
+
+    /*
+     * Garis dimensi: dua segmen dengan tick tegak di ujung dan label ukur di
+     * tengah. Elemen tunggal — label adalah satu-satunya anak.
+     */
+    .dim {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        color: var(--color-dimension-600);
+    }
+
+    .dim::before,
+    .dim::after {
+        content: '';
+        flex: 1;
+        height: 9px;
+        background:
+            linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat,
+            linear-gradient(currentColor, currentColor) left / 1px 100% no-repeat,
+            linear-gradient(currentColor, currentColor) right / 1px 100% no-repeat;
+    }
+
+    .dim__label {
+        font-family: var(--font-annotation);
+        font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+
+    /* Stempel status: outline mono miring, bahasa periksa/terima dokumen. */
+    .stamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border: 1.5px solid currentColor;
+        padding: 0.3rem 0.7rem;
+        font-family: var(--font-annotation);
         font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.1em;
         line-height: 1.2;
         text-transform: uppercase;
-    }
-
-    .search-field__control {
-        width: 100%;
-        min-height: 1.75rem;
-        border: 0;
-        background: transparent;
-        color: white;
-        font-size: 0.8125rem;
-        outline: none;
-    }
-
-    .search-field__control::placeholder {
-        color: var(--color-ink-400);
+        transform: rotate(-2deg);
     }
 
     .empty-state {
@@ -259,29 +437,29 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 1px solid rgb(255 255 255 / 10%);
-        background: rgb(16 26 48 / 50%);
+        border: 1px solid var(--color-ink-200);
+        background: var(--color-paper-50);
         padding: 3rem 1.5rem;
         text-align: center;
     }
 
     /*
-     * Dokumen legal punya banyak heading/paragraf/list berurutan. Distyle di
-     * sini supaya kedua Blade-nya berisi teks saja — tanpa mengulang utility
-     * yang sama di setiap elemen, dan tanpa menambah plugin typography.
+     * Dokumen legal: banyak heading/paragraf/list berurutan. Distyle di sini
+     * supaya kedua Blade-nya berisi teks saja.
      */
     .legal-prose {
-        color: var(--color-ink-200);
-        font-size: 0.875rem;
+        color: var(--color-ink-700);
+        font-size: 0.9375rem;
         line-height: 1.75;
     }
 
     .legal-prose > h2 {
         margin-top: 2.75rem;
-        color: white;
-        font-family: var(--font-display);
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid var(--color-ink-200);
+        color: var(--color-ink-900);
         font-size: 1.25rem;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: -0.015em;
     }
 
@@ -295,7 +473,7 @@
     }
 
     .legal-prose ul {
-        list-style: disc;
+        list-style: square;
         padding-left: 1.35rem;
     }
 
@@ -303,25 +481,30 @@
         margin-top: 0.4rem;
     }
 
+    .legal-prose li::marker {
+        color: var(--color-dimension-500);
+    }
+
     .legal-prose strong {
-        color: var(--color-ivory-100);
+        color: var(--color-ink-900);
         font-weight: 600;
     }
 
     .legal-prose a {
-        color: var(--color-gold-400);
+        color: var(--color-blueprint-700);
         text-decoration: underline;
+        text-decoration-color: rgb(29 79 140 / 40%);
         text-underline-offset: 3px;
     }
 
     .legal-prose a:hover {
-        color: var(--color-gold-200);
+        color: var(--color-blueprint-500);
+        text-decoration-color: currentColor;
     }
 
     /*
      * Bar CTA yang menempel di bawah viewport mobile. Hanya di bawah lg —
-     * di desktop panel booking sudah sticky di sidebar, jadi bar ini
-     * disembunyikan supaya tidak ada dua CTA yang bersaing.
+     * di desktop panel booking sudah sticky di sidebar.
      *
      * env(safe-area-inset-bottom) menjaga tombol tidak tertutup home
      * indicator iPhone; fallback 0px untuk browser tanpa dukungan env().
@@ -336,10 +519,8 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        border-top: 1px solid rgb(255 255 255 / 12%);
-        background: rgb(16 26 48 / 96%);
-        /* 1rem, bukan padding site-container: pada 320px setiap 8px menentukan
-           apakah harga masih utuh di samping tombol atau ikut terpotong. */
+        border-top: 1px solid var(--color-ink-300);
+        background: rgb(251 250 245 / 96%);
         padding: 0.75rem 1rem;
         padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
         backdrop-filter: blur(12px);
@@ -353,8 +534,7 @@
 
     /*
      * Menu mobile mengunci scroll body lewat .overflow-hidden (app.js). Saat itu
-     * bar CTA harus ikut hilang: panel menunya mengalir dari atas, jadi tanpa ini
-     * bar menutupi tautan terakhirnya.
+     * bar CTA harus ikut hilang supaya tidak menutupi tautan terakhir panel.
      */
     body.overflow-hidden .mobile-cta-bar {
         display: none;
@@ -362,9 +542,8 @@
 
     /*
      * Barnya fixed, jadi tanpa ruang tambahan ia menutupi ~76px terakhir
-     * dokumen — di apartments/show yang tertutup adalah baris pembayaran dan
-     * copyright di footer. :has() dipakai supaya hanya halaman yang benar-benar
-     * memasang bar yang kehilangan ruang itu; di lg barnya sudah hilang.
+     * dokumen. :has() dipakai supaya hanya halaman yang benar-benar memasang
+     * bar yang kehilangan ruang itu; di lg barnya sudah hilang.
      */
     body:has(.mobile-cta-bar) {
         padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
@@ -378,9 +557,8 @@
 
     /*
      * Deskripsi panjang dipotong secara visual, bukan dipotong isinya: teks
-     * lengkap tetap ada di DOM (jadi tetap terbaca screen reader dan mesin
-     * pencari), hanya tingginya yang dibatasi sampai <details> berikutnya
-     * dibuka. Pemotongan pakai line-clamp sehingga tidak pernah memutus kata.
+     * lengkap tetap ada di DOM, hanya tingginya yang dibatasi sampai
+     * <details> berikutnya dibuka.
      */
     .prose-clamp {
         display: -webkit-box;
@@ -399,8 +577,9 @@
         min-height: 2.75rem;
         align-items: center;
         gap: 0.35rem;
-        color: var(--color-gold-400);
+        color: var(--color-blueprint-700);
         cursor: pointer;
+        font-family: var(--font-annotation);
         font-size: 0.8125rem;
         font-weight: 700;
         list-style: none;
@@ -411,17 +590,59 @@
     }
 
     .prose-reveal > summary:hover {
-        color: var(--color-gold-200);
+        color: var(--color-blueprint-500);
     }
 
     /*
-     * Label ditulis sebagai teks nyata di DOM (bukan content: '' dari CSS)
-     * supaya screen reader selalu membacakannya; yang ditukar CSS hanya mana
-     * dari keduanya yang tampil.
+     * Label ditulis sebagai teks nyata di DOM supaya screen reader selalu
+     * membacakannya; yang ditukar CSS hanya mana dari keduanya yang tampil.
      */
     .prose-reveal:not([open]) .prose-reveal__less,
     .prose-reveal[open] .prose-reveal__more {
         display: none;
+    }
+
+    /*
+     * Momen otentik satu-satunya: garis dimensi hero mengukur plat foto
+     * saat halaman dibuka. Digambar sekali, ease-out eksponensial, dan
+     * dimatikan total bagi pengguna reduced-motion.
+     */
+    .dim-draw line,
+    .dim-draw path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: dim-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .dim-draw text {
+        opacity: 0;
+        animation: dim-label 400ms ease-out 650ms forwards;
+    }
+
+    @keyframes dim-draw {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes dim-label {
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dim-draw line,
+        .dim-draw path {
+            animation: none;
+            stroke-dasharray: none;
+            stroke-dashoffset: 0;
+        }
+
+        .dim-draw text {
+            animation: none;
+            opacity: 1;
+        }
     }
 }
 
@@ -470,9 +691,8 @@
 /*
  * Halaman reservasi adalah satu-satunya bukti pemesanan yang bisa dibawa user
  * (belum ada email konfirmasi), jadi harus terbaca saat dicetak atau disimpan
- * sebagai PDF. Browser membuang latar gelap ketika mencetak, sementara teksnya
- * tetap terang — tanpa blok ini hasil cetaknya nyaris kosong. Warna dipaksa
- * gelap hanya di dalam .print-sheet supaya sisa situs tidak ikut terpengaruh.
+ * sebagai PDF. Situs memang terang, tetapi cetak tetap dipaksa bersih:
+ * navigasi, footer, dan bar CTA dibuang; border dipertahankan terbaca.
  */
 @media print {
     @page {
@@ -495,13 +715,13 @@
     .print-sheet,
     .print-sheet * {
         max-width: none !important;
-        border-color: #c5cad5 !important;
+        border-color: #b0b4ab !important;
         background: transparent !important;
-        color: #101a30 !important;
+        color: #171a15 !important;
         box-shadow: none !important;
     }
 
     .print-sheet {
-        border: 1px solid #c5cad5 !important;
+        border: 1px solid #b0b4ab !important;
     }
 }

@@ -8,28 +8,28 @@
 @section('meta_description', 'Data yang dikumpulkan ' . $support['business_name'] . ', tujuan penggunaannya, dan pihak ketiga yang terlibat dalam proses reservasi.')
 
 @section('content')
-    <section class="border-b border-white/10 bg-ink-900">
+    <section class="border-b border-ink-300 bg-paper-200">
         <div class="site-container py-12 sm:py-14">
             <div class="mx-auto max-w-3xl">
-                <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
-                    <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
-                    <span aria-hidden="true">›</span>
-                    <span class="text-ink-200" aria-current="page">Kebijakan Privasi</span>
+                <nav class="annotation flex items-center gap-2 uppercase" aria-label="Breadcrumb">
+                    <a href="{{ route('home') }}" class="transition-colors hover:text-blueprint-700">Beranda</a>
+                    <span aria-hidden="true">/</span>
+                    <span class="text-ink-700" aria-current="page">Kebijakan privasi</span>
                 </nav>
 
-                <h1 class="mt-6 font-display text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">
+                <h1 class="mt-6 text-4xl font-bold tracking-[-0.02em] text-ink-900 sm:text-5xl">
                     Kebijakan Privasi
                 </h1>
-                <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-400">
+                <p class="annotation mt-4 uppercase">
                     Terakhir diperbarui {{ $support['legal_updated_at'] }}
                 </p>
             </div>
         </div>
     </section>
 
-    <section class="bg-ink-950 py-12 sm:py-16">
+    <section class="bg-paper-100 py-12 sm:py-16">
         <div class="site-container">
-            <div class="mx-auto max-w-3xl legal-prose">
+            <div class="mx-auto max-w-3xl border border-ink-200 bg-paper-50 p-6 sm:p-10 legal-prose">
                 <p>
                     Halaman ini menjelaskan data yang benar-benar dikumpulkan dan dipakai oleh sistem
                     {{ $support['business_name'] }} — tidak lebih. Kami tidak mengumpulkan data di luar daftar di
@@ -116,9 +116,9 @@
 
                 {{-- Ditandai eksplisit: mekanismenya belum ada di aplikasi, jadi
                      jangan dituliskan seolah-olah sudah otomatis. --}}
-                <div class="mt-5 border border-gold-400/30 bg-gold-400/5 px-4 py-3.5">
-                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-gold-300">Perlu dikonfigurasi</p>
-                    <p class="mt-2 text-xs leading-6 text-ink-200">
+                <div class="mt-5 border border-blueprint-300 bg-blueprint-50 px-4 py-3.5">
+                    <p class="font-annotation text-xs font-bold uppercase tracking-[0.08em] text-blueprint-800">Perlu dikonfigurasi</p>
+                    <p class="mt-2 text-xs leading-6 text-ink-700">
                         Permintaan ekspor dan penghapusan data saat ini dilayani secara manual melalui kontak bantuan;
                         belum ada tombol mandiri di dalam akun. Tenggat penanganan permintaan serta lama penyimpanan
                         data setelah akun ditutup belum ditetapkan dan perlu diisi oleh pengelola.

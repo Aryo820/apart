@@ -13,28 +13,28 @@
 @section('meta_description', 'Ketentuan pemesanan, pembayaran, dan pembatalan untuk reservasi apartemen di ' . $support['business_name'] . '.')
 
 @section('content')
-    <section class="border-b border-white/10 bg-ink-900">
+    <section class="border-b border-ink-300 bg-paper-200">
         <div class="site-container py-12 sm:py-14">
             <div class="mx-auto max-w-3xl">
-                <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-400" aria-label="Breadcrumb">
-                    <a href="{{ route('home') }}" class="transition-colors hover:text-gold-300">Beranda</a>
-                    <span aria-hidden="true">›</span>
-                    <span class="text-ink-200" aria-current="page">Syarat &amp; Ketentuan</span>
+                <nav class="annotation flex items-center gap-2 uppercase" aria-label="Breadcrumb">
+                    <a href="{{ route('home') }}" class="transition-colors hover:text-blueprint-700">Beranda</a>
+                    <span aria-hidden="true">/</span>
+                    <span class="text-ink-700" aria-current="page">Syarat &amp; ketentuan</span>
                 </nav>
 
-                <h1 class="mt-6 font-display text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">
+                <h1 class="mt-6 text-4xl font-bold tracking-[-0.02em] text-ink-900 sm:text-5xl">
                     Syarat &amp; Ketentuan
                 </h1>
-                <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-400">
+                <p class="annotation mt-4 uppercase">
                     Terakhir diperbarui {{ $support['legal_updated_at'] }}
                 </p>
             </div>
         </div>
     </section>
 
-    <section class="bg-ink-950 py-12 sm:py-16">
+    <section class="bg-paper-100 py-12 sm:py-16">
         <div class="site-container">
-            <div class="mx-auto max-w-3xl legal-prose">
+            <div class="mx-auto max-w-3xl border border-ink-200 bg-paper-50 p-6 sm:p-10 legal-prose">
                 <p>
                     Dokumen ini menjelaskan cara kerja reservasi di {{ $support['business_name'] }} sebagaimana yang
                     berjalan pada sistem saat ini. Dengan membuat reservasi, Anda menyatakan telah membaca dan

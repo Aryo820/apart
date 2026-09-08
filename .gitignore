@@ -28,3 +28,7 @@ Thumbs.db
 skill-output.txt
 .phpunit.result.cache
 /ui-ux.md
+.impeccable/
+.playwright-cli/
+PRODUCT.md
+audit.md

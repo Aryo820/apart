@@ -5,17 +5,18 @@
 
     // Copy Indonesia + warna semantik hidup di layer presentasi; enum-nya
     // tetap satu sumber kebenaran status dan dipakai apa adanya oleh Filament.
+    // Warna = tinta stempel di atas kertas.
     [$label, $classes, $dot] = match ($status) {
-        BookingStatus::Confirmed => ['Terkonfirmasi', 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300', 'bg-emerald-400'],
-        BookingStatus::Pending => ['Menunggu pembayaran', 'border-amber-400/30 bg-amber-500/10 text-amber-300', 'bg-amber-400 animate-pulse'],
-        BookingStatus::Cancelled => ['Dibatalkan', 'border-rose-400/30 bg-rose-500/10 text-rose-300', 'bg-rose-400'],
+        BookingStatus::Confirmed => ['Terkonfirmasi', 'border-emerald-700 bg-paper-50 text-emerald-800', 'bg-emerald-600'],
+        BookingStatus::Pending => ['Menunggu pembayaran', 'border-amber-700 bg-paper-50 text-amber-800', 'bg-amber-500 animate-pulse'],
+        BookingStatus::Cancelled => ['Dibatalkan', 'border-dimension-600 bg-dimension-50 text-dimension-700', 'bg-dimension-500'],
         // Expired bukan kegagalan tamu maupun pembatalan — netral, bukan merah.
-        BookingStatus::Expired => ['Kedaluwarsa', 'border-white/15 bg-white/5 text-ink-300', 'bg-ink-400'],
-        BookingStatus::Completed => ['Selesai', 'border-white/15 bg-white/5 text-ink-200', 'bg-ink-300'],
+        BookingStatus::Expired => ['Kedaluwarsa', 'border-ink-500 bg-paper-50 text-ink-500', 'bg-ink-400'],
+        BookingStatus::Completed => ['Selesai', 'border-ink-400 bg-paper-50 text-ink-600', 'bg-ink-300'],
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex items-center gap-2 border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] ' . $classes]) }}>
+<span {{ $attributes->merge(['class' => 'stamp ' . $classes]) }}>
     <span class="h-1.5 w-1.5 shrink-0 {{ $dot }}" aria-hidden="true"></span>
     {{ $label }}
 </span>
