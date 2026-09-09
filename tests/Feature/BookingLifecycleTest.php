@@ -579,7 +579,8 @@ class BookingLifecycleTest extends TestCase
             ->assertOk()
             ->assertSee('Menunggu pembayaran')
             ->assertSee('Batas waktu pembayaran')
-            ->assertSee($booking->paymentDeadlineAt()->translatedFormat('l, d F Y'))
+            // halaman menampilkan deadline versi WIB (Asia/Jakarta), bukan UTC
+            ->assertSee($booking->paymentDeadlineAt()->copy()->timezone('Asia/Jakarta')->translatedFormat('l, d F Y'))
             ->assertSee('otomatis')
             ->assertSee('Bayar Sekarang')
             ->assertSee('Batalkan reservasi')

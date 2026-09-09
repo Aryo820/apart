@@ -5,7 +5,14 @@
     use App\Enums\PaymentStatus;
 
     $support = config('support');
-    $paymentDeadline = $booking->paymentDeadlineAt();
+    /*
+     * Deadline internal UTC (storage + semua perhitungan server tetap UTC);
+     * dikonversi ke Asia/Jakarta hanya di boundary tampilan, sekali di sini,
+     * agar kedua panel di bawah (pending & kedaluwarsa) mencantumkan waktu
+     * WIB yang benar tanpa mengubah timezone global aplikasi. copy() mencegah
+     * mutasi instance deadline yang dipakai tempat lain.
+     */
+    $paymentDeadline = $booking->paymentDeadlineAt()?->copy()->timezone('Asia/Jakarta');
 
     /*
      * Booking bisa masih berstatus Pending di DB tapi sudah lewat batas waktu:
@@ -79,7 +86,7 @@
                         <p class="annotation uppercase">Kode reservasi</p>
                         <h1 class="mt-2 font-annotation text-3xl font-bold tracking-[0.01em] text-ink-900 sm:text-4xl">
                             {{ $booking->booking_code }}</h1>
-                        <p class="mt-3 font-annotation text-xs text-ink-500">Diterbitkan {{ $booking->created_at->format('d M Y, H:i') }}
+                        <p class="mt-3 font-annotation text-xs text-ink-500">Diterbitkan {{ $booking->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB
                         </p>
                     </div>
 

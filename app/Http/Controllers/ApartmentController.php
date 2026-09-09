@@ -102,8 +102,16 @@ class ApartmentController extends Controller
         // dengan pengecekan konflik, jadi daftar yang dilihat tamu tidak bisa
         // berbeda dari yang ditolak server — termasuk untuk booking pending
         // yang batas waktu pembayarannya sudah lewat.
+        //
+        // Batas bawah hanya untuk kebutuhan kalender ini: booking yang sudah
+        // selesai kemarin tidak relevan bagi tamu yang mencari tanggal ke
+        // depan, jadi check_out < today tidak dimuat. Hari ini (check-out
+        // malam ini) masih relevan: tanggalnya masih dipegang sampai 12.00.
+        // Filter ini TIDAK menyentuh scopeBlocking/scopeConflicting —
+        // pengecekan konflik tetap melihat seluruh historis.
         $bookedDates = Booking::where('apartment_id', $apartment->id)
             ->blocking()
+            ->whereDate('check_out', '>=', today()->toDateString())
             ->get(['check_in', 'check_out'])
             ->map(function ($booking) {
                 return [
