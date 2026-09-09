@@ -27,7 +27,24 @@ class StatsOverviewWidget extends BaseWidget
         $totalApartments = Apartment::where('status', ApartmentStatus::Available)->count();
         $totalUsers = User::where('role', UserRole::User)->count();
 
+        /*
+         * Insiden finansial belum tertangani: payment settled yang bookingnya
+         * tidak memegang tanggal — refund manual diperlukan. Dipakai sebagai
+         * alarm di dashboard; jumlahnya harus 0 pada operasi normal. Querynya
+         * scope yang sama dengan filter "Perlu Tindakan" di PaymentResource.
+         */
+        $paymentsNeedingAttention = Payment::needsAttention()->count();
+
         return [
+            Stat::make('Perlu Tindakan', $paymentsNeedingAttention > 0
+                ? $paymentsNeedingAttention.' payment'
+                : '0')
+                ->description($paymentsNeedingAttention > 0
+                    ? 'Settled tapi booking tanpa inventory — refund manual'
+                    : 'Tidak ada insiden pembayaran')
+                ->descriptionIcon('heroicon-m-exclamation-triangle')
+                ->color($paymentsNeedingAttention > 0 ? 'danger' : 'success'),
+
             Stat::make('Total Revenue', 'Rp '.number_format($totalRevenue, 0, ',', '.'))
                 ->description('Settled payments')
                 ->descriptionIcon('heroicon-m-banknotes')

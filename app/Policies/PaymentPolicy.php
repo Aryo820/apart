@@ -36,6 +36,21 @@ class PaymentPolicy extends AdminPolicy
     }
 
     /**
+     * Menandai insiden finansial "Perlu Tindakan" selesai: mencatat bahwa
+     * operator telah menyelesaikan follow-up manual (mis. refund di
+     * dashboard Midtrans). Admin-only, seperti seluruh aksi panel payment.
+     *
+     * Ini BUKAN update() biasa: ability update ditolak permanen di bawah
+     * karena form edit payment tidak boleh ada. Resolve attention punya
+     * jalur sendiri yang hanya menyentuh kolom resolusi operasional —
+     * bukan status payment gateway.
+     */
+    public function resolveAttention(User $user, mixed $model): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
      * Bulk delete ditolak eksplisit, bukan hanya "tidak ada tombolnya".
      *
      * AdminPolicy::deleteAny mengizinkan admin karena resource lain memang punya

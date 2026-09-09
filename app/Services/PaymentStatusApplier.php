@@ -179,10 +179,20 @@ class PaymentStatusApplier
              * yang lebih besar daripada satu refund.
              */
             if ($rivals->isNotEmpty()) {
-                Log::warning('Pembayaran settle tapi tanggalnya sudah dipegang booking lain. Perlu refund manual.', [
+                // Insiden finansial: konteks terstruktur agar operator bisa
+                // menemukan barisnya di panel (PaymentResource filter "Perlu
+                // Tindakan") tanpa menggali log mentah. Hanya identifier —
+                // tidak ada kredensial gateway di sini.
+                Log::warning('payment_settled_booking_unavailable', [
+                    'incident_type' => 'settled_but_unavailable',
+                    'booking_id' => $booking->id,
                     'booking_code' => $booking->booking_code,
                     'booking_status' => $booking->status->value,
+                    'payment_id' => $booking->payment->id,
+                    'order_id' => $booking->payment->order_id,
                     'apartment_id' => $booking->apartment_id,
+                    'amount' => (float) $booking->payment->gross_amount,
+                    'payment_status' => $booking->payment->status->value,
                     'check_in' => $booking->check_in->toDateString(),
                     'check_out' => $booking->check_out->toDateString(),
                     'conflicting_bookings' => $rivals->map(fn ($rival) => [
@@ -190,7 +200,6 @@ class PaymentStatusApplier
                         'status' => $rival->status->value,
                     ])->all(),
                     'transaction_id' => $payload['transaction_id'] ?? null,
-                    'gross_amount' => $payload['gross_amount'] ?? null,
                 ]);
 
                 return 'settled_but_unavailable';

@@ -14,7 +14,10 @@ use App\Policies\FacilityPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -58,6 +61,23 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Facility::class, FacilityPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+
+        /*
+         * Scheduler yang gagal tidak boleh hilang diam-diam: tanpa ini, satu-
+         * satunya jejak kegagalan bookings:expire-pending adalah exit code
+         * schedule:run yang tidak dilihat siapa pun. Listener ini menulis
+         * sinyal ERROR terstruktur ke log aplikasi — kanal yang sudah
+         * dibawa oleh deployment apa pun (file/journald/stdout) dan bisa
+         * di-forward ke error tracker eksternal tanpa asumsi provider.
+         */
+        Event::listen(ScheduledTaskFailed::class, function (ScheduledTaskFailed $event): void {
+            Log::error('scheduler_task_failed', [
+                'task' => $event->task->command ?? $event->task->name ?? 'unknown',
+                'description' => $event->task->description,
+                'exception' => $event->exception::class,
+                'message' => $event->exception->getMessage(),
+            ]);
+        });
 
         // Bagikan daftar kota populer (dari DB) ke layout utama agar footer
         // tidak lagi meng-hardcode nama kota. Dibungkus rescue() karena layout
